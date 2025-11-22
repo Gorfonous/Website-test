@@ -32,9 +32,34 @@ fn get_image_list(images_dir: &Path) -> Vec<String> {
     images
 }
 
+fn check_background_image_dev(background_dir: &Path) -> Option<String> {
+    if !background_dir.exists() {
+        return None;
+    }
+    
+    if let Ok(entries) = fs::read_dir(background_dir) {
+        for entry in entries.flatten() {
+            if let Some(extension) = entry.path().extension() {
+                if extension.to_str() == Some("png") || extension.to_str() == Some("jpg") || extension.to_str() == Some("jpeg") {
+                    if let Some(filename) = entry.file_name().to_str() {
+                        let category = background_dir.parent().unwrap().file_name().unwrap().to_str().unwrap();
+                        return Some(format!("/templates/{}/Background/{}", category, filename));
+                    }
+                }
+            }
+        }
+    }
+    
+    None
+}
+
 fn generate_modeling_page(category: &str, title: &str, content: &str) -> String {
     let templates_images_dir = Path::new("templates").join(category).join("images");
+    let templates_background_dir = Path::new("templates").join(category).join("Background");
     let image_list = get_image_list(&templates_images_dir);
+    
+    // Check for background image (for dev server, we don't fail on multiple images)
+    let background_image = check_background_image_dev(&templates_background_dir);
     
     let image_paths_js = if image_list.is_empty() {
         "[]".to_string()
@@ -45,9 +70,19 @@ fn generate_modeling_page(category: &str, title: &str, content: &str) -> String 
     let updated_content = content.replace("{{IMAGE_PATHS}}", &image_paths_js);
     
     let base_template = include_str!("../templates/base.html");
-    base_template
+    let mut final_html = base_template
         .replace("{{TITLE}}", title)
-        .replace("{{CONTENT}}", &updated_content)
+        .replace("{{CONTENT}}", &updated_content);
+    
+    // Replace background if one exists
+    if let Some(bg_path) = background_image {
+        final_html = final_html.replace(
+            "background: linear-gradient(45deg, #ff6b9d, #c44faf, #8b5fbf, #6b73ff);",
+            &format!("background: url('{}') center center/cover no-repeat;", bg_path)
+        );
+    }
+    
+    final_html
 }
 
 async fn home_page() -> Html<String> {
