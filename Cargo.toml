@@ -14,4 +14,4 @@ path = "src/main.rs"
 
 [[bin]]
 name = "generate-static"
-path = "build.rs"
+path = "src/generate_static.rs"
