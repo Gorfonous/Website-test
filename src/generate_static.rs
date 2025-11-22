@@ -125,8 +125,11 @@ fn generate_modeling_page(category: &str, title: &str, content: &str, docs_dir: 
     if let Some(bg_path) = background_image {
         final_html = final_html.replace(
             "background: linear-gradient(45deg, #ff6b9d, #c44faf, #8b5fbf, #6b73ff);",
-            &format!("background: url('{}') center center/cover no-repeat;", bg_path)
+            &format!("background: url('{}') center center/cover no-repeat fixed;", bg_path)
         );
+        // Remove the background animation properties since we have a static image
+        final_html = final_html.replace("background-size: 400% 400%;", "");
+        final_html = final_html.replace("animation: gradientShift 15s ease infinite;", "");
         println!("Applied background image: {}", bg_path);
     }
     
