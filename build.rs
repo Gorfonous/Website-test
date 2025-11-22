@@ -1,0 +1,65 @@
+use std::fs;
+use std::path::Path;
+
+fn main() {
+    let docs_dir = Path::new("docs");
+    if !docs_dir.exists() {
+        fs::create_dir_all(docs_dir).expect("Failed to create docs directory");
+    }
+
+    let html_content = r#"<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eternal Cataclysm Studios</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        .subtitle {
+            font-style: italic;
+            color: #ffd700;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hello, World!</h1>
+        <p>Welcome to <span class="subtitle">Eternal Cataclysm Studios</span></p>
+        <p>This website is powered by Rust and deployed with GitHub Pages.</p>
+    </div>
+</body>
+</html>"#;
+
+    fs::write(docs_dir.join("index.html"), html_content)
+        .expect("Failed to write index.html");
+
+    println!("Static files generated in docs/ directory");
+}
