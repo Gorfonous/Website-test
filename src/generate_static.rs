@@ -8,7 +8,8 @@ fn generate_page(_page_name: &str, title: &str, content: &str) -> String {
         .replace("{{CONTENT}}", content)
 }
 
-fn get_image_list(images_dir: &Path) -> Vec<String> {
+
+fn get_image_list_for_web(images_dir: &Path, _category: &str) -> Vec<String> {
     let mut images = Vec::new();
     
     if images_dir.exists() {
@@ -17,7 +18,7 @@ fn get_image_list(images_dir: &Path) -> Vec<String> {
                 if let Some(extension) = entry.path().extension() {
                     if extension.to_str() == Some("png") || extension.to_str() == Some("jpg") || extension.to_str() == Some("jpeg") {
                         if let Some(filename) = entry.file_name().to_str() {
-                            images.push(format!("./templates/{}/images/{}", images_dir.parent().unwrap().file_name().unwrap().to_str().unwrap(), filename));
+                            images.push(format!("./images/{}", filename));
                         }
                     }
                 }
@@ -30,9 +31,46 @@ fn get_image_list(images_dir: &Path) -> Vec<String> {
     images
 }
 
-fn generate_modeling_page(category: &str, title: &str, content: &str, _docs_dir: &Path) -> String {
+fn copy_images(source_dir: &Path, dest_dir: &Path) {
+    if !source_dir.exists() {
+        return;
+    }
+    
+    // Create destination directory if it doesn't exist
+    if let Err(_) = fs::create_dir_all(dest_dir) {
+        println!("Failed to create directory: {:?}", dest_dir);
+        return;
+    }
+    
+    // Copy all image files
+    if let Ok(entries) = fs::read_dir(source_dir) {
+        for entry in entries.flatten() {
+            if let Some(extension) = entry.path().extension() {
+                if extension.to_str() == Some("png") || extension.to_str() == Some("jpg") || extension.to_str() == Some("jpeg") {
+                    if let Some(filename) = entry.file_name().to_str() {
+                        let source_file = source_dir.join(filename);
+                        let dest_file = dest_dir.join(filename);
+                        
+                        if let Err(e) = fs::copy(&source_file, &dest_file) {
+                            println!("Failed to copy {:?} to {:?}: {}", source_file, dest_file, e);
+                        } else {
+                            println!("Copied image: {}", filename);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn generate_modeling_page(category: &str, title: &str, content: &str, docs_dir: &Path) -> String {
     let templates_images_dir = Path::new("templates").join(category).join("images");
-    let image_list = get_image_list(&templates_images_dir);
+    let docs_images_dir = docs_dir.join("modeling").join(category).join("images");
+    
+    // Copy images from templates to docs directory
+    copy_images(&templates_images_dir, &docs_images_dir);
+    
+    let image_list = get_image_list_for_web(&templates_images_dir, category);
     
     let image_paths_js = if image_list.is_empty() {
         "[]".to_string()
