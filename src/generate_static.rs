@@ -3,9 +3,21 @@ use std::path::Path;
 
 fn generate_page(_page_name: &str, title: &str, content: &str) -> String {
     let base_template = include_str!("../templates/base.html");
-    base_template
+    let mut final_html = base_template
         .replace("{{TITLE}}", title)
-        .replace("{{CONTENT}}", content)
+        .replace("{{CONTENT}}", content);
+    
+    // Update navigation links for GitHub Pages (static generation)
+    final_html = final_html.replace(
+        r#"<a href="/" class="nav-item">Home</a>"#,
+        r#"<a href="/Website-test/index.html" class="nav-item">Home</a>"#
+    );
+    final_html = final_html.replace(
+        r#"<a href="/modeling/headshots/">Headshots</a>"#,
+        r#"<a href="/Website-test/modeling/headshots/index.html">Headshots</a>"#
+    );
+    
+    final_html
 }
 
 
@@ -120,6 +132,16 @@ fn generate_modeling_page(category: &str, title: &str, content: &str, docs_dir: 
     let mut final_html = base_template
         .replace("{{TITLE}}", title)
         .replace("{{CONTENT}}", &updated_content);
+    
+    // Update navigation links for GitHub Pages (static generation)
+    final_html = final_html.replace(
+        r#"<a href="/" class="nav-item">Home</a>"#,
+        r#"<a href="/Website-test/index.html" class="nav-item">Home</a>"#
+    );
+    final_html = final_html.replace(
+        r#"<a href="/modeling/headshots/">Headshots</a>"#,
+        r#"<a href="/Website-test/modeling/headshots/index.html">Headshots</a>"#
+    );
     
     // Replace background if one exists
     if let Some(bg_path) = background_image {
