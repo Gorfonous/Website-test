@@ -4,14 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Rust-based web server project for Eternal Cataclysm Studios. It provides a simple "Hello World" website using the Axum web framework.
+This is a Rust-based web server project for Eternal Cataclysm Studios that serves a modeling portfolio website. The project supports both development server mode and static site generation for GitHub Pages deployment.
 
 ## Technology Stack
 
 - **Language**: Rust (2024 edition)
 - **Web Framework**: Axum 0.7
 - **Async Runtime**: Tokio 1.0
-- **HTTP Utilities**: Tower 0.4
+- **HTTP Utilities**: Tower 0.4, Tower-HTTP 0.5
+- **Template System**: Custom HTML template replacement system
 
 ## Common Commands
 
@@ -22,38 +23,57 @@ This is a Rust-based web server project for Eternal Cataclysm Studios. It provid
 - `cargo build` - Build the project
 - `cargo build --release` - Build optimized release version
 
-### GitHub Pages Deployment
-- Static files are automatically generated and deployed via GitHub Actions
-- Manual generation: `cargo run --bin generate-static` (outputs to `docs/` directory)
-
-### Testing
+### Code Quality
 - `cargo test` - Run all tests
 - `cargo clippy` - Run the Rust linter
 - `cargo fmt` - Format code according to Rust standards
 
 ## Project Structure
 
-- `src/main.rs` - Main application entry point with web server setup
-- `build.rs` - Static site generator for GitHub Pages
-- `docs/` - Static HTML files for GitHub Pages deployment
+- `src/main.rs` - Development server with dynamic route handlers
+- `src/generate_static.rs` - Static site generator for GitHub Pages
+- `templates/` - HTML template files with placeholder substitution
+  - `base.html` - Base template with {{TITLE}} and {{CONTENT}} placeholders
+  - `index.html` - Home page content template
+  - `headshots.html` - Headshots portfolio page with {{IMAGE_PATHS}} placeholder
+- `docs/` - Generated static HTML files and assets for GitHub Pages
 - `.github/workflows/deploy.yml` - GitHub Actions workflow for automated deployment
-- `Cargo.toml` - Project dependencies and configuration
-- `target/` - Build artifacts (auto-generated)
 
 ## Architecture
 
-### Development Server
-The application uses Axum as the web framework with the following setup:
-- Single route handler at `/` serving HTML content
-- Async/await pattern with Tokio runtime
-- TCP listener bound to localhost:3000
-- Simple HTML response with company branding
+### Template System
+The project uses a custom template replacement system:
+- `base.html` provides the layout with `{{TITLE}}` and `{{CONTENT}}` placeholders
+- Page-specific templates are embedded into the base template
+- Special handling for modeling pages with dynamic image gallery generation
+- Image paths are automatically discovered and injected as JavaScript arrays
+
+### Development Server (src/main.rs)
+- Multi-route Axum application with separate handlers per page
+- Template compilation happens at runtime using `include_str!` macros
+- Static file serving from `docs/` directory for images
+- Routes:
+  - `/` - Home page
+  - `/modeling/headshots/` - Headshots portfolio page
+
+### Static Site Generator (src/generate_static.rs)
+- Compiles templates into static HTML files in `docs/` directory
+- Automatically scans for images in modeling category folders
+- Creates necessary directory structure for nested pages
+- Special logic for modeling pages to inject image paths from filesystem
 
 ### GitHub Pages Deployment
-- Static HTML files are generated using a custom build script
-- Files are output to the `docs/` directory
-- GitHub Actions automatically builds and deploys on push to main
-- Styled with CSS for a professional appearance
+- Automated deployment via GitHub Actions on push to main
+- Uses Rust toolchain with dependency caching
+- Builds static files and deploys to GitHub Pages
+- Supports both main branch pushes and pull request previews
+
+## Development Workflow
+
+1. **Adding New Pages**: Add route handler in `main.rs` and corresponding entry in `generate_static.rs`
+2. **Template Updates**: Modify templates in `templates/` directory - changes affect both dev server and static generation
+3. **Adding Images**: Place images in `docs/modeling/{category}/images/` - they'll be auto-discovered by static generator
+4. **Testing Changes**: Use development server for rapid iteration, then generate static files to test final output
 
 ## Deployment Setup
 
