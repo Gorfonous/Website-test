@@ -104,8 +104,19 @@ fn check_background_image(background_dir: &Path, location: &str) -> Result<Optio
 fn generate_modeling_page(category: &str, title: &str, content: &str, docs_dir: &Path) -> Result<String, String> {
     let templates_images_dir = Path::new("templates").join(category).join("images");
     let templates_background_dir = Path::new("templates").join(category).join("Background");
+    let templates_title_file = Path::new("templates").join(category).join("title.txt");
     let docs_images_dir = docs_dir.join("modeling").join(category).join("images");
     let docs_background_dir = docs_dir.join("modeling").join(category).join("Background");
+    
+    // Read custom title if it exists
+    let custom_title = if templates_title_file.exists() {
+        match fs::read_to_string(&templates_title_file) {
+            Ok(content) => Some(content.trim().to_string()),
+            Err(_) => None,
+        }
+    } else {
+        None
+    };
     
     // Check for background image
     let background_image = check_background_image(&templates_background_dir, &format!("templates/{}/Background", category))?;
@@ -126,7 +137,15 @@ fn generate_modeling_page(category: &str, title: &str, content: &str, docs_dir: 
         format!("[{}]", image_list.iter().map(|img| format!("'{}'", img)).collect::<Vec<_>>().join(", "))
     };
     
-    let updated_content = content.replace("{{IMAGE_PATHS}}", &image_paths_js);
+    let mut updated_content = content.replace("{{IMAGE_PATHS}}", &image_paths_js);
+    
+    // Replace custom title if it exists
+    if let Some(ref custom_text) = custom_title {
+        updated_content = updated_content.replace("{{CUSTOM_TITLE}}", custom_text);
+        println!("Applied custom title from title.txt: {}", custom_text);
+    } else {
+        updated_content = updated_content.replace("{{CUSTOM_TITLE}}", "");
+    }
     
     let base_template = include_str!("../templates/base.html");
     let mut final_html = base_template
