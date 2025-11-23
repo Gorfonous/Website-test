@@ -166,6 +166,13 @@ fn create_dir_if_not_exists(path: &Path) {
 
 fn main() {
     let docs_dir = Path::new("docs");
+    
+    // Clean and rebuild the entire docs directory structure
+    if docs_dir.exists() {
+        fs::remove_dir_all(docs_dir).expect("Failed to remove existing docs directory");
+        println!("Cleaned existing docs directory");
+    }
+    
     create_dir_if_not_exists(docs_dir);
 
     // Create modeling subdirectory
