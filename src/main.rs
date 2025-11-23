@@ -56,7 +56,7 @@ fn check_background_image_dev(background_dir: &Path) -> Option<String> {
 fn generate_modeling_page(category: &str, title: &str, content: &str) -> String {
     let templates_images_dir = Path::new("templates").join(category).join("images");
     let templates_background_dir = Path::new("templates").join(category).join("Background");
-    let templates_title_file = Path::new("templates").join(category).join("title.txt");
+    let templates_title_file = Path::new("templates").join(category).join("subtitle.txt");
     let image_list = get_image_list(&templates_images_dir);
     
     // Read custom title if it exists

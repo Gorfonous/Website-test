@@ -104,7 +104,7 @@ fn check_background_image(background_dir: &Path, location: &str) -> Result<Optio
 fn generate_modeling_page(category: &str, title: &str, content: &str, docs_dir: &Path) -> Result<String, String> {
     let templates_images_dir = Path::new("templates").join(category).join("images");
     let templates_background_dir = Path::new("templates").join(category).join("Background");
-    let templates_title_file = Path::new("templates").join(category).join("title.txt");
+    let templates_title_file = Path::new("templates").join(category).join("subtitle.txt");
     let docs_images_dir = docs_dir.join("modeling").join(category).join("images");
     let docs_background_dir = docs_dir.join("modeling").join(category).join("Background");
     
@@ -142,7 +142,7 @@ fn generate_modeling_page(category: &str, title: &str, content: &str, docs_dir: 
     // Replace custom title if it exists, otherwise use default
     if let Some(ref custom_text) = custom_title {
         updated_content = updated_content.replace("{{CUSTOM_TITLE}}", custom_text);
-        println!("Applied custom title from title.txt: {}", custom_text);
+        println!("Applied custom title from subtitle.txt: {}", custom_text);
     } else {
         updated_content = updated_content.replace("{{CUSTOM_TITLE}}", "Professional portrait photography for actors, models, and business professionals");
     }
