@@ -17,6 +17,16 @@ fn generate_page(_page_name: &str, title: &str, content: &str) -> String {
         r#"<a href="/Website-test/modeling/headshots/index.html">Headshots</a>"#
     );
     
+    // Update image paths for GitHub Pages deployment
+    final_html = final_html.replace(
+        r#"src="/templates/global-images/"#,
+        r#"src="/Website-test/global-images/"#
+    );
+    final_html = final_html.replace(
+        r#"album-cover.png"#,
+        r#"album-cover.png"#
+    );
+    
     final_html
 }
 
@@ -28,7 +38,7 @@ fn get_image_list_for_web(images_dir: &Path, _category: &str) -> Vec<String> {
         if let Ok(entries) = fs::read_dir(images_dir) {
             for entry in entries.flatten() {
                 if let Some(extension) = entry.path().extension() {
-                    if extension.to_str() == Some("png") || extension.to_str() == Some("jpg") || extension.to_str() == Some("jpeg") {
+                    if matches!(extension.to_str(), Some("png") | Some("jpg") | Some("jpeg")) {
                         if let Some(filename) = entry.file_name().to_str() {
                             images.push(format!("./images/{}", filename));
                         }
@@ -58,7 +68,7 @@ fn copy_images(source_dir: &Path, dest_dir: &Path) {
     if let Ok(entries) = fs::read_dir(source_dir) {
         for entry in entries.flatten() {
             if let Some(extension) = entry.path().extension() {
-                if extension.to_str() == Some("png") || extension.to_str() == Some("jpg") || extension.to_str() == Some("jpeg") {
+                if matches!(extension.to_str(), Some("png") | Some("jpg") | Some("jpeg")) {
                     if let Some(filename) = entry.file_name().to_str() {
                         let source_file = source_dir.join(filename);
                         let dest_file = dest_dir.join(filename);
@@ -85,7 +95,7 @@ fn check_background_image(background_dir: &Path, location: &str) -> Result<Optio
     if let Ok(entries) = fs::read_dir(background_dir) {
         for entry in entries.flatten() {
             if let Some(extension) = entry.path().extension() {
-                if extension.to_str() == Some("png") || extension.to_str() == Some("jpg") || extension.to_str() == Some("jpeg") {
+                if matches!(extension.to_str(), Some("png") | Some("jpg") | Some("jpeg")) {
                     if let Some(filename) = entry.file_name().to_str() {
                         background_images.push(filename.to_string());
                     }
@@ -193,6 +203,27 @@ fn main() {
     }
     
     create_dir_if_not_exists(docs_dir);
+    
+    // Copy CSS file from templates to docs
+    let templates_css = Path::new("templates").join("styles.css");
+    let docs_css = docs_dir.join("styles.css");
+    
+    if templates_css.exists() {
+        if let Err(e) = fs::copy(&templates_css, &docs_css) {
+            println!("Failed to copy CSS file: {}", e);
+        } else {
+            println!("Copied styles.css to docs directory");
+        }
+    }
+    
+    // Copy global images folder from templates to docs
+    let templates_global_images = Path::new("templates").join("global-images");
+    let docs_global_images = docs_dir.join("global-images");
+    
+    if templates_global_images.exists() {
+        create_dir_if_not_exists(&docs_global_images);
+        copy_images(&templates_global_images, &docs_global_images);
+    }
 
     // Create modeling subdirectory
     create_dir_if_not_exists(&docs_dir.join("modeling"));
