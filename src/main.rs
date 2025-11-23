@@ -80,11 +80,11 @@ fn generate_modeling_page(category: &str, title: &str, content: &str) -> String 
     
     let mut updated_content = content.replace("{{IMAGE_PATHS}}", &image_paths_js);
     
-    // Replace custom title if it exists
+    // Replace custom title if it exists, otherwise use default
     if let Some(ref custom_text) = custom_title {
         updated_content = updated_content.replace("{{CUSTOM_TITLE}}", custom_text);
     } else {
-        updated_content = updated_content.replace("{{CUSTOM_TITLE}}", "");
+        updated_content = updated_content.replace("{{CUSTOM_TITLE}}", "Professional portrait photography for actors, models, and business professionals");
     }
     
     let base_template = include_str!("../templates/base.html");
