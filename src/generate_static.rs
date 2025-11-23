@@ -27,6 +27,12 @@ fn generate_page(_page_name: &str, title: &str, content: &str) -> String {
         r#"album-cover.png"#
     );
     
+    // Update CSS path for GitHub Pages deployment
+    final_html = final_html.replace(
+        r#"href="/templates/styles.css""#,
+        r#"href="/Website-test/styles.css""#
+    );
+    
     final_html
 }
 
@@ -170,6 +176,12 @@ fn generate_modeling_page(category: &str, title: &str, content: &str, docs_dir: 
     final_html = final_html.replace(
         r#"<a href="/modeling/headshots/">Headshots</a>"#,
         r#"<a href="/Website-test/modeling/headshots/index.html">Headshots</a>"#
+    );
+    
+    // Update CSS path for GitHub Pages deployment
+    final_html = final_html.replace(
+        r#"href="/templates/styles.css""#,
+        r#"href="/Website-test/styles.css""#
     );
     
     // Replace background if one exists
