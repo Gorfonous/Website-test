@@ -1,20 +1,35 @@
 use std::fs;
 use std::path::Path;
 
-fn generate_page(_page_name: &str, title: &str, content: &str) -> String {
+fn generate_navigation_items_static(categories: &[String]) -> String {
+    let mut navigation_items = Vec::new();
+    
+    for category in categories {
+        let title = {
+            let mut chars = category.chars();
+            match chars.next() {
+                None => category.clone(),
+                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+            }
+        };
+        navigation_items.push(format!("                    <a href=\"/Website-test/modeling/{}/index.html\">{}</a>", category, title));
+    }
+    
+    navigation_items.join("\n")
+}
+
+fn generate_page(_page_name: &str, title: &str, content: &str, categories: &[String]) -> String {
     let base_template = include_str!("../templates/base.html");
+    let navigation_items = generate_navigation_items_static(categories);
     let mut final_html = base_template
         .replace("{{TITLE}}", title)
-        .replace("{{CONTENT}}", content);
+        .replace("{{CONTENT}}", content)
+        .replace("{{NAVIGATION_ITEMS}}", &navigation_items);
     
     // Update navigation links for GitHub Pages (static generation)
     final_html = final_html.replace(
         r#"<a href="/" class="nav-item">Home</a>"#,
         r#"<a href="/Website-test/index.html" class="nav-item">Home</a>"#
-    );
-    final_html = final_html.replace(
-        r#"<a href="/modeling/headshots/">Headshots</a>"#,
-        r#"<a href="/Website-test/modeling/headshots/index.html">Headshots</a>"#
     );
     
     // Update image paths for GitHub Pages deployment
@@ -117,7 +132,7 @@ fn check_background_image(background_dir: &Path, location: &str) -> Result<Optio
     }
 }
 
-fn generate_modeling_page(category: &str, title: &str, content: &str, docs_dir: &Path) -> Result<String, String> {
+fn generate_modeling_page(category: &str, title: &str, content: &str, docs_dir: &Path, categories: &[String]) -> Result<String, String> {
     let templates_images_dir = Path::new("templates").join("modeling").join(category).join("images");
     let templates_background_dir = Path::new("templates").join("modeling").join(category).join("Background");
     let templates_title_file = Path::new("templates").join("modeling").join(category).join("subtitle.txt");
@@ -164,18 +179,16 @@ fn generate_modeling_page(category: &str, title: &str, content: &str, docs_dir: 
     }
     
     let base_template = include_str!("../templates/base.html");
+    let navigation_items = generate_navigation_items_static(categories);
     let mut final_html = base_template
         .replace("{{TITLE}}", title)
-        .replace("{{CONTENT}}", &updated_content);
+        .replace("{{CONTENT}}", &updated_content)
+        .replace("{{NAVIGATION_ITEMS}}", &navigation_items);
     
     // Update navigation links for GitHub Pages (static generation)
     final_html = final_html.replace(
         r#"<a href="/" class="nav-item">Home</a>"#,
         r#"<a href="/Website-test/index.html" class="nav-item">Home</a>"#
-    );
-    final_html = final_html.replace(
-        r#"<a href="/modeling/headshots/">Headshots</a>"#,
-        r#"<a href="/Website-test/modeling/headshots/index.html">Headshots</a>"#
     );
     
     // Update CSS path for GitHub Pages deployment
@@ -240,17 +253,10 @@ fn main() {
     // Create modeling subdirectory
     create_dir_if_not_exists(&docs_dir.join("modeling"));
     
-    // Discover all modeling categories and generate pages
+    // First, discover all modeling categories
     let modeling_dir = Path::new("templates").join("modeling");
+    let mut categories = Vec::new();
     
-    // Generate home page first
-    let home_content = include_str!("../templates/index.html");
-    let home_html = generate_page("", "Home", home_content);
-    let home_file_path = docs_dir.join("index.html");
-    fs::write(&home_file_path, home_html).expect("Failed to write index.html");
-    println!("Generated index.html");
-    
-    // Generate modeling pages
     if modeling_dir.exists() {
         if let Ok(entries) = fs::read_dir(&modeling_dir) {
             for entry in entries.flatten() {
@@ -259,43 +265,58 @@ fn main() {
                     let html_file = modeling_dir.join(&category_name).join(format!("{}.html", category_name));
                     
                     if html_file.exists() {
-                        // Create category directory and images folder
-                        let category_path = docs_dir.join("modeling").join(&category_name);
-                        create_dir_if_not_exists(&category_path);
-                        create_dir_if_not_exists(&category_path.join("images"));
-                        
-                        // Generate title (capitalize first letter)
-                        let title = {
-                            let mut chars = category_name.chars();
-                            match chars.next() {
-                                None => "Portfolio".to_string(),
-                                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-                            }
-                        };
-                        
-                        // Read the HTML content
-                        match fs::read_to_string(&html_file) {
-                            Ok(content) => {
-                                match generate_modeling_page(&category_name, &title, &content, docs_dir) {
-                                    Ok(html) => {
-                                        let file_path = docs_dir.join("modeling").join(&category_name).join("index.html");
-                                        fs::write(&file_path, html).expect(&format!("Failed to write modeling/{}/index.html", category_name));
-                                        println!("Generated modeling/{}/index.html", category_name);
-                                    },
-                                    Err(error) => {
-                                        eprintln!("{}", error);
-                                        eprintln!("Failed to generate: modeling/{}/index.html", category_name);
-                                        std::process::exit(1);
-                                    }
-                                }
-                                println!("Found modeling category: {}", category_name);
-                            },
-                            Err(e) => {
-                                println!("Failed to read {}: {}", html_file.display(), e);
-                            }
-                        }
+                        categories.push(category_name);
                     }
                 }
+            }
+        }
+    }
+    categories.sort(); // Sort for consistent ordering
+    
+    // Generate home page first
+    let home_content = include_str!("../templates/index.html");
+    let home_html = generate_page("", "Home", home_content, &categories);
+    let home_file_path = docs_dir.join("index.html");
+    fs::write(&home_file_path, home_html).expect("Failed to write index.html");
+    println!("Generated index.html");
+    
+    // Generate modeling pages
+    for category_name in &categories {
+        let html_file = modeling_dir.join(category_name).join(format!("{}.html", category_name));
+        
+        // Create category directory and images folder
+        let category_path = docs_dir.join("modeling").join(category_name);
+        create_dir_if_not_exists(&category_path);
+        create_dir_if_not_exists(&category_path.join("images"));
+        
+        // Generate title (capitalize first letter)
+        let title = {
+            let mut chars = category_name.chars();
+            match chars.next() {
+                None => "Portfolio".to_string(),
+                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+            }
+        };
+        
+        // Read the HTML content
+        match fs::read_to_string(&html_file) {
+            Ok(content) => {
+                match generate_modeling_page(category_name, &title, &content, docs_dir, &categories) {
+                    Ok(html) => {
+                        let file_path = docs_dir.join("modeling").join(category_name).join("index.html");
+                        fs::write(&file_path, html).expect(&format!("Failed to write modeling/{}/index.html", category_name));
+                        println!("Generated modeling/{}/index.html", category_name);
+                    },
+                    Err(error) => {
+                        eprintln!("{}", error);
+                        eprintln!("Failed to generate: modeling/{}/index.html", category_name);
+                        std::process::exit(1);
+                    }
+                }
+                println!("Found modeling category: {}", category_name);
+            },
+            Err(e) => {
+                println!("Failed to read {}: {}", html_file.display(), e);
             }
         }
     }
