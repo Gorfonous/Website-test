@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Arial', sans-serif;
-            background: url('./Background/Screenshot 2025-04-22 121919.png') center center/cover no-repeat fixed;
+            background: url('./Background/bkgrnd.png') center center/cover no-repeat fixed;
             
             
             color: #333;
@@ -114,10 +114,10 @@
         }
 
         .page-section {
-            background: rgba(255, 255, 255, 0.9);
+            background: transparent;
             padding: 3rem;
             border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            box-shadow: none;
             margin-bottom: 2rem;
         }
 
@@ -192,7 +192,7 @@
         }
 
         .image-item {
-            background: rgba(255, 255, 255, 0.95);
+            background: transparent;
             border-radius: 15px;
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
@@ -301,7 +301,7 @@
                 const noImagesMessage = document.getElementById('noImagesMessage');
                 
                 // Images detected during build time
-                const imagePaths = ['./images/Screenshot 2024-05-13 134753.png', './images/Screenshot 2024-05-13 134912.png', './images/Screenshot 2024-05-15 163236.png'];
+                const imagePaths = ['./images/12376591_969891293078576_641493529584384530_n.png', './images/22519927_2024223884489787_7262998021420541196_o.png', './images/22563631_10154921791732374_1346876554_o.png', './images/87727704_2780533122012382_654539224770412544_n.png', './images/88397675_519845218717651_5733259651957391360_n.png', './images/AMBER+RODGER-408.png', './images/AMBER+RODGER-606.png', './images/B&w+flower+on+chest.png', './images/Beautifyl+headshot+in+window.png', './images/Black+Shirt+and+makeup+head+shot.png', './images/DSC04809_preview.png', './images/IMG_036690.png', './images/Nova_Photography_Outdoor_Boudoir_Amber-10.png', './images/Nova_Photography_Outdoor_Boudoir_Amber-11.png', './images/Photo+by+Shelby+VanScoyoc.png', './images/agony.png', './images/beauty+light+sesnsual+B&w.png', './images/candle+headshot.png', './images/cant+bear+it+colord.png', './images/dramatic+with+brice.png', './images/headshot+#2+amberbedit.png', './images/headshot+in+blue+and+white+amber+edit.png', './images/piano+woman+#3.png', './images/piano+woman+#5.png', './images/red+dress+Hair.png', './images/strawbery+wink+party+girl.png', './images/tree+hair+down.png', './images/tree+portraight.png', './images/unspecified2L4QXPE9.png', './images/unspecified9BL7NK0J.png', './images/untitledshoot-1251.png', './images/wet+hair.png', './images/with+Mechelle.png', './images/with+Peter3.png', './images/with+peter.png'];
                 
                 if (imagePaths.length === 0) {
                     noImagesMessage.style.display = 'block';

@@ -35,7 +35,13 @@ This is a Rust-based web server project for Eternal Cataclysm Studios that serve
 - `templates/` - HTML template files with placeholder substitution
   - `base.html` - Base template with {{TITLE}} and {{CONTENT}} placeholders
   - `index.html` - Home page content template
-  - `headshots.html` - Headshots portfolio page with {{IMAGE_PATHS}} placeholder
+  - `headshots/headshots.html` - Headshots portfolio page with {{IMAGE_PATHS}} and {{CUSTOM_TITLE}} placeholders
+  - `styles.css` - Shared CSS styles for all pages
+  - `global-images/` - Images used across multiple pages
+  - `{category}/` - Category-specific folders containing:
+    - `images/` - Portfolio images for that category
+    - `Background/` - Optional background image (only one allowed per category)
+    - `subtitle.txt` - Optional custom subtitle text
 - `docs/` - Generated static HTML files and assets for GitHub Pages
 - `.github/workflows/deploy.yml` - GitHub Actions workflow for automated deployment
 
@@ -47,6 +53,9 @@ The project uses a custom template replacement system:
 - Page-specific templates are embedded into the base template
 - Special handling for modeling pages with dynamic image gallery generation
 - Image paths are automatically discovered and injected as JavaScript arrays
+- Modeling pages support custom titles via `{{CUSTOM_TITLE}}` placeholder
+- Background images can be set per category (only one image allowed per category)
+- Static generation updates navigation links and asset paths for GitHub Pages deployment
 
 ### Development Server (src/main.rs)
 - Multi-route Axum application with separate handlers per page
@@ -58,9 +67,11 @@ The project uses a custom template replacement system:
 
 ### Static Site Generator (src/generate_static.rs)
 - Compiles templates into static HTML files in `docs/` directory
-- Automatically scans for images in modeling category folders
+- Automatically scans for images in modeling category folders and copies them to `docs/`
 - Creates necessary directory structure for nested pages
 - Special logic for modeling pages to inject image paths from filesystem
+- Validates background images (only one allowed per category, fails build if multiple found)
+- Updates all navigation links and asset paths for GitHub Pages deployment
 
 ### GitHub Pages Deployment
 - Automated deployment via GitHub Actions on push to main
@@ -72,7 +83,7 @@ The project uses a custom template replacement system:
 
 1. **Adding New Pages**: Add route handler in `main.rs` and corresponding entry in `generate_static.rs`
 2. **Template Updates**: Modify templates in `templates/` directory - changes affect both dev server and static generation
-3. **Adding Images**: Place images in `docs/modeling/{category}/images/` - they'll be auto-discovered by static generator
+3. **Adding Images**: Place images in `templates/{category}/images/` - they'll be auto-discovered and copied to `docs/` by static generator
 4. **Testing Changes**: Use development server for rapid iteration, then generate static files to test final output
 
 ## Deployment Setup
