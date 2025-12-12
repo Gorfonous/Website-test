@@ -9,6 +9,7 @@ tokio = { version = "1.0", features = ["full"] }
 tower = "0.4"
 tower-http = { version = "0.5", features = ["fs"] }
 serde = { version = "1.0", features = ["derive"] }
+lettre = "0.11"
 
 [[bin]]
 name = "server"

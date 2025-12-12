@@ -31,6 +31,10 @@ fn generate_page(_page_name: &str, title: &str, content: &str, categories: &[Str
         r#"<a href="/" class="nav-item">Home</a>"#,
         r#"<a href="/Website-test/index.html" class="nav-item">Home</a>"#
     );
+    final_html = final_html.replace(
+        r#"<a href="/contact/" class="nav-item">Contact</a>"#,
+        r#"<a href="/Website-test/contact/index.html" class="nav-item">Contact</a>"#
+    );
     
     // Update image paths for GitHub Pages deployment
     final_html = final_html.replace(
@@ -47,6 +51,8 @@ fn generate_page(_page_name: &str, title: &str, content: &str, categories: &[Str
         r#"href="/templates/styles.css""#,
         r#"href="/Website-test/styles.css""#
     );
+    
+    // Keep Formspree form action for static generation (works on GitHub Pages)
     
     final_html
 }
@@ -273,6 +279,28 @@ fn main() {
     }
     categories.sort(); // Sort for consistent ordering
     
+    // Discover other pages (like contact)
+    let templates_dir = Path::new("templates");
+    let mut other_pages = Vec::new();
+    
+    if let Ok(entries) = fs::read_dir(&templates_dir) {
+        for entry in entries.flatten() {
+            if entry.path().is_dir() {
+                let folder_name = entry.file_name().to_str().unwrap().to_string();
+                
+                // Skip modeling directory and certain folders
+                if folder_name == "modeling" || folder_name == "global-images" {
+                    continue;
+                }
+                
+                let html_file = entry.path().join(format!("{}.html", folder_name));
+                if html_file.exists() {
+                    other_pages.push((folder_name.clone(), html_file));
+                }
+            }
+        }
+    }
+    
     // Generate home page first
     let home_content = include_str!("../templates/index.html");
     let home_html = generate_page("", "Home", home_content, &categories);
@@ -314,6 +342,35 @@ fn main() {
                     }
                 }
                 println!("Found modeling category: {}", category_name);
+            },
+            Err(e) => {
+                println!("Failed to read {}: {}", html_file.display(), e);
+            }
+        }
+    }
+    
+    // Generate other pages (like contact)
+    for (page_name, html_file) in &other_pages {
+        // Create page directory
+        let page_path = docs_dir.join(page_name);
+        create_dir_if_not_exists(&page_path);
+        
+        // Generate title (capitalize first letter)
+        let title = {
+            let mut chars = page_name.chars();
+            match chars.next() {
+                None => "Page".to_string(),
+                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+            }
+        };
+        
+        // Read the HTML content
+        match fs::read_to_string(html_file) {
+            Ok(content) => {
+                let html = generate_page("", &title, &content, &categories);
+                let file_path = page_path.join("index.html");
+                fs::write(&file_path, html).expect(&format!("Failed to write {}/index.html", page_name));
+                println!("Generated {}/index.html", page_name);
             },
             Err(e) => {
                 println!("Failed to read {}: {}", html_file.display(), e);
