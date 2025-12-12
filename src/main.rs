@@ -1,4 +1,5 @@
-use axum::{extract::Path as AxumPath, response::Html, routing::get, Router};
+use axum::{extract::Path as AxumPath, response::Html, routing::{get, post}, Router, Form};
+use serde::Deserialize;
 use tower_http::services::ServeDir;
 use std::collections::HashMap;
 use std::fs;
@@ -108,6 +109,14 @@ struct PageTemplate {
     content: String,
     is_modeling: bool,
     category: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct ContactForm {
+    name: String,
+    email: Option<String>,
+    subject: String,
+    message: String,
 }
 
 fn discover_templates() -> Result<HashMap<String, PageTemplate>, Box<dyn std::error::Error>> {
@@ -316,6 +325,98 @@ async fn home_page_handler(templates: axum::extract::State<HashMap<String, PageT
     }
 }
 
+// Contact page handler (no path parameter)
+async fn contact_page_handler(templates: axum::extract::State<HashMap<String, PageTemplate>>) -> Result<Html<String>, axum::response::Response> {
+    if let Some(template) = templates.get("/contact/") {
+        let html_content = generate_page(&template.title, &template.content, &templates);
+        Ok(Html(html_content))
+    } else {
+        // Return 404 response
+        let not_found_html = generate_page("404 - Page Not Found", 
+            "<div style='text-align: center; padding: 50px;'>
+                <h1>404 - Page Not Found</h1>
+                <p>The contact page template was not found.</p>
+                <a href='/'>Return to Home</a>
+             </div>", &templates);
+        
+        Err(axum::response::Response::builder()
+            .status(404)
+            .header("content-type", "text/html")
+            .body(not_found_html.into())
+            .unwrap())
+    }
+}
+
+// General page handler for non-modeling pages
+async fn general_page_handler(AxumPath(page_name): AxumPath<String>, templates: axum::extract::State<HashMap<String, PageTemplate>>) -> Result<Html<String>, axum::response::Response> {
+    let normalized_path = format!("/{}/", page_name);
+    
+    if let Some(template) = templates.get(&normalized_path) {
+        let html_content = generate_page(&template.title, &template.content, &templates);
+        Ok(Html(html_content))
+    } else {
+        // Return 404 response
+        let not_found_html = generate_page("404 - Page Not Found", 
+            "<div style='text-align: center; padding: 50px;'>
+                <h1>404 - Page Not Found</h1>
+                <p>The page you're looking for doesn't exist.</p>
+                <a href='/'>Return to Home</a>
+             </div>", &templates);
+        
+        Err(axum::response::Response::builder()
+            .status(404)
+            .header("content-type", "text/html")
+            .body(not_found_html.into())
+            .unwrap())
+    }
+}
+
+// Contact form submission handler
+async fn contact_form_handler(Form(form): Form<ContactForm>) -> Html<String> {
+    use std::fs::OpenOptions;
+    use std::io::Write;
+    
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    
+    let email = form.email.as_deref().unwrap_or("Anonymous");
+    let message_entry = format!(
+        "\n=== Message received at {} ===\nFrom: {} <{}>\nSubject: {}\nMessage:\n{}\n\n",
+        timestamp, form.name, email, form.subject, form.message
+    );
+    
+    // Save to messages.txt file
+    let messages_file = "messages.txt";
+    match OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(messages_file) 
+    {
+        Ok(mut file) => {
+            if let Err(e) = file.write_all(message_entry.as_bytes()) {
+                println!("Error writing to messages file: {}", e);
+            } else {
+                println!("New message saved from: {} - Subject: {}", form.name, form.subject);
+            }
+        },
+        Err(e) => {
+            println!("Error opening messages file: {}", e);
+        }
+    }
+    
+    Html(format!(
+        r#"
+        <div style="text-align: center; padding: 50px; background: linear-gradient(45deg, #4CAF50, #45a049); color: white; border-radius: 15px; margin: 20px;">
+            <h1>✨ Message Sent Successfully!</h1>
+            <p>Thank you {}, I'll get back to you soon!</p>
+            <a href="/contact/" style="color: white; text-decoration: underline;">← Send another message</a>
+        </div>
+        "#, form.name
+    ))
+}
+
 
 #[tokio::main]
 async fn main() {
@@ -342,8 +443,14 @@ async fn main() {
         // Home page (special route)
         .route("/", get(home_page_handler))
         
+        // Contact page routes (both GET and POST)
+        .route("/contact/", get(contact_page_handler).post(contact_form_handler))
+        
         // Dynamic routes for modeling pages
         .route("/modeling/:category/", get(dynamic_modeling_handler))
+        
+        // General page handler for other pages (about, etc.)
+        .route("/:page/", get(general_page_handler))
         
         // Serve static files (images) from docs directory and templates
         .nest_service("/docs", ServeDir::new("docs"))
