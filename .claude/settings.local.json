@@ -4,7 +4,9 @@
       "Bash(cargo:*)",
       "Bash(find:*)",
       "Bash(tree:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(move:*)",
+      "Bash(move templatesheadshots templatesmodelingheadshots)"
     ],
     "deny": [],
     "ask": []

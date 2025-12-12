@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{TITLE}} - 4AmberTechel</title>
+    <title>Groupshots - 4AmberTechel</title>
     <style>
         * {
             margin: 0;
@@ -13,9 +13,9 @@
 
         body {
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(45deg, #ff6b9d, #c44faf, #8b5fbf, #6b73ff);
-            background-size: 400% 400%;
-            animation: gradientShift 15s ease infinite;
+            background: url('./Background/bkgrnd.png') center center/cover no-repeat fixed;
+            
+            
             color: #333;
             min-height: 100vh;
         }
@@ -267,7 +267,7 @@
     <header class="header">
         <div class="logo">4AmberTechel</div>
         <nav class="nav-menu">
-            <a href="/" class="nav-item">Home</a>
+            <a href="/Website-test/index.html" class="nav-item">Home</a>
             <div class="modeling-dropdown">
                 <a href="#" class="nav-item">Modeling</a>
                 <div class="dropdown-content">
@@ -280,7 +280,76 @@
     <div class="cart-indicator">CART (0)</div>
 
     <main class="main-content">
-        {{CONTENT}}
+                <section class="page-section">
+            <h1 class="page-title">Groupshots</h1>
+            <p class="page-subtitle">Amber has had the pleasure of working with numerous models.
+Here are some of those top group photos taken by numerous photographers.</p>
+            
+            <div class="image-grid" id="imageGrid">
+                <!-- Images will be loaded dynamically -->
+            </div>
+            
+            <div class="no-images-message" id="noImagesMessage">
+                <p>No images available yet. Please add .png files to the images/ folder for this section.</p>
+                <p><small>Images will automatically appear here once added to: modeling/groupshots/images/</small></p>
+            </div>
+        </section>
+
+        <script>
+            // Function to load images from the images folder
+            function loadImages() {
+                const imageGrid = document.getElementById('imageGrid');
+                const noImagesMessage = document.getElementById('noImagesMessage');
+                
+                // Images detected during build time
+                const imagePaths = ['./images/97479019_679119952849816_777280336299032576_n.png', './images/IMG_0261.png', './images/One+Last+Dance+with+Stephen+Sibold+and+Genevieve+Wolfrum.png', './images/TECHEL_BONMARITO2.png', './images/TECHEL_BONMARITO212.png', './images/TECHEL_BONMARITO221.png', './images/TECHEL_BONMARITO24.png', './images/grabass.png', './images/photo+by+Shelby+VanScoyoc+with+Nate+Brassfield.png', './images/sensual+woman.png'];
+                
+                if (imagePaths.length === 0) {
+                    noImagesMessage.style.display = 'block';
+                    return;
+                }
+                
+                // Load each image
+                imagePaths.forEach((imagePath, index) => {
+                    createImageItem(imagePath, index + 1);
+                });
+                
+                hideNoImagesMessage();
+            }
+            
+            function createImageItem(imagePath, index) {
+                const imageGrid = document.getElementById('imageGrid');
+                const imageItem = document.createElement('div');
+                imageItem.className = 'image-item';
+                
+                const img = document.createElement('img');
+                img.src = imagePath;
+                img.alt = `Groupshot Image ${index}`;
+                img.loading = 'lazy';
+                
+                const caption = document.createElement('div');
+                caption.className = 'image-caption';
+                caption.textContent = `Groupshot ${index}`;
+                
+                imageItem.appendChild(img);
+                imageItem.appendChild(caption);
+                
+                // Add click handler for larger view
+                imageItem.addEventListener('click', function() {
+                    window.open(imagePath, '_blank');
+                });
+                
+                imageGrid.appendChild(imageItem);
+            }
+            
+            function hideNoImagesMessage() {
+                const noImagesMessage = document.getElementById('noImagesMessage');
+                noImagesMessage.style.display = 'none';
+            }
+
+            // Load images when page loads
+            document.addEventListener('DOMContentLoaded', loadImages);
+        </script>
     </main>
 </body>
 </html>
