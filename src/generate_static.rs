@@ -1,7 +1,18 @@
 use std::fs;
 use std::path::Path;
+use std::process::Command;
 
-fn generate_page(title: &str, content: &str) -> String {
+fn get_git_hash() -> String {
+    Command::new("git")
+        .args(["rev-parse", "--short", "HEAD"])
+        .output()
+        .ok()
+        .and_then(|output| String::from_utf8(output.stdout).ok())
+        .map(|s| s.trim().to_string())
+        .unwrap_or_else(|| "dev".to_string())
+}
+
+fn generate_page(title: &str, content: &str, version: &str) -> String {
     let base_template = include_str!("../templates/base.html");
     let mut final_html = base_template
         .replace("{{TITLE}}", title)
@@ -27,10 +38,10 @@ fn generate_page(title: &str, content: &str) -> String {
         r#"src="/Website-test/global-images/"#
     );
 
-    // Update CSS path for GitHub Pages deployment
+    // Update CSS path for GitHub Pages deployment with cache busting
     final_html = final_html.replace(
         r#"href="/templates/styles.css""#,
-        r#"href="/Website-test/styles.css""#
+        &format!(r#"href="/Website-test/styles.css?v={}""#, version)
     );
 
     final_html
@@ -200,7 +211,7 @@ fn generate_categories_json(categories: &[(String, CategoryData)]) -> String {
     format!("{{{}}}", json_parts.join(", "))
 }
 
-fn generate_modeling_page(content: &str, categories: &[(String, CategoryData)]) -> String {
+fn generate_modeling_page(content: &str, categories: &[(String, CategoryData)], version: &str) -> String {
     let categories_json = generate_categories_json(categories);
     let updated_content = content.replace("{{CATEGORIES_JSON}}", &categories_json);
 
@@ -223,10 +234,10 @@ fn generate_modeling_page(content: &str, categories: &[(String, CategoryData)]) 
         r#"<a href="/Website-test/modeling/index.html" class="nav-item">Modeling</a>"#
     );
 
-    // Update CSS path for GitHub Pages deployment
+    // Update CSS path for GitHub Pages deployment with cache busting
     final_html = final_html.replace(
         r#"href="/templates/styles.css""#,
-        r#"href="/Website-test/styles.css""#
+        &format!(r#"href="/Website-test/styles.css?v={}""#, version)
     );
 
     final_html
@@ -240,6 +251,8 @@ fn create_dir_if_not_exists(path: &Path) {
 
 fn main() {
     let docs_dir = Path::new("docs");
+    let version = get_git_hash();
+    println!("Building with version: {}", version);
 
     // Clean and rebuild the entire docs directory structure
     if docs_dir.exists() {
@@ -282,14 +295,14 @@ fn main() {
 
     // Generate home page
     let home_content = include_str!("../templates/index.html");
-    let home_html = generate_page("Home", home_content);
+    let home_html = generate_page("Home", home_content, &version);
     let home_file_path = docs_dir.join("index.html");
     fs::write(&home_file_path, home_html).expect("Failed to write index.html");
     println!("Generated index.html");
 
     // Generate unified modeling page
     let modeling_content = include_str!("../templates/modeling/modeling.html");
-    let modeling_html = generate_modeling_page(modeling_content, &categories);
+    let modeling_html = generate_modeling_page(modeling_content, &categories, &version);
     let modeling_path = docs_dir.join("modeling").join("index.html");
     fs::write(&modeling_path, modeling_html).expect("Failed to write modeling/index.html");
     println!("Generated modeling/index.html");
@@ -302,7 +315,7 @@ fn main() {
     if contact_path.exists() {
         match fs::read_to_string(&contact_path) {
             Ok(content) => {
-                let html = generate_page("Contact", &content);
+                let html = generate_page("Contact", &content, &version);
                 let file_path = contact_dir.join("index.html");
                 fs::write(&file_path, html).expect("Failed to write contact/index.html");
                 println!("Generated contact/index.html");

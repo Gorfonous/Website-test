@@ -33,14 +33,15 @@ This is a Rust-based web server project for Eternal Cataclysm Studios that serve
 - `src/main.rs` - Development server with dynamic route handlers
 - `src/generate_static.rs` - Static site generator for GitHub Pages
 - `templates/` - HTML template files with placeholder substitution
-  - `base.html` - Base template with {{TITLE}} and {{CONTENT}} placeholders
+  - `base.html` - Base template with `{{TITLE}}`, `{{CONTENT}}`, navigation, and footer
   - `index.html` - Home page content template
-  - `headshots/headshots.html` - Headshots portfolio page with {{IMAGE_PATHS}} and {{CUSTOM_TITLE}} placeholders
   - `styles.css` - Shared CSS styles for all pages
   - `global-images/` - Images used across multiple pages
-  - `{category}/` - Category-specific folders containing:
+  - `contact/contact.html` - Contact page with form
+  - `modeling/modeling.html` - Unified modeling page with category dropdown
+  - `modeling/{category}/` - Category-specific folders containing:
     - `images/` - Portfolio images for that category
-    - `Background/` - Optional background image (only one allowed per category)
+    - `images/Links.txt` - Optional file mapping image names to URLs (format: `imagename,https://...`)
     - `subtitle.txt` - Optional custom subtitle text
 - `docs/` - Generated static HTML files and assets for GitHub Pages
 - `.github/workflows/deploy.yml` - GitHub Actions workflow for automated deployment
@@ -50,41 +51,63 @@ This is a Rust-based web server project for Eternal Cataclysm Studios that serve
 ### Template System
 The project uses a custom template replacement system:
 - `base.html` provides the layout with `{{TITLE}}` and `{{CONTENT}}` placeholders
+- `base.html` includes the site footer (appears on all pages automatically)
+- `base.html` links to `styles.css` for consistent styling across all pages
 - Page-specific templates are embedded into the base template
-- Special handling for modeling pages with dynamic image gallery generation
-- Image paths are automatically discovered and injected as JavaScript arrays
-- Modeling pages support custom titles via `{{CUSTOM_TITLE}}` placeholder
-- Background images can be set per category (only one image allowed per category)
-- Static generation updates navigation links and asset paths for GitHub Pages deployment
+- Modeling page uses `{{CATEGORIES_JSON}}` placeholder for all category data
+
+### Unified Modeling Page
+- Single `/modeling/` route serves all categories
+- Category dropdown selector to switch between headshots, groupshots, etc.
+- All category data (images, subtitles, links) embedded as JSON in the page
+- Images are clickable:
+  - If `Links.txt` contains a mapping for the image, opens that URL
+  - Otherwise, opens the image in a new tab
+
+### Links.txt Format
+Place in `templates/modeling/{category}/images/Links.txt`:
+```
+imagename,https://example.com/product-link
+another-image,https://example.com/another-link
+```
+- Image name should match filename without extension
+- One mapping per line, comma-separated
 
 ### Development Server (src/main.rs)
 - Multi-route Axum application with separate handlers per page
 - Template compilation happens at runtime using `include_str!` macros
-- Static file serving from `docs/` directory for images
+- Static file serving from `templates/` directory
+- **No-cache headers**: Browser caching disabled for instant updates during development
 - Routes:
   - `/` - Home page
-  - `/modeling/headshots/` - Headshots portfolio page
+  - `/contact/` - Contact page (GET shows form, POST handles submission)
+  - `/modeling/` - Unified modeling portfolio with category dropdown
 
 ### Static Site Generator (src/generate_static.rs)
 - Compiles templates into static HTML files in `docs/` directory
 - Automatically scans for images in modeling category folders and copies them to `docs/`
-- Creates necessary directory structure for nested pages
-- Special logic for modeling pages to inject image paths from filesystem
-- Validates background images (only one allowed per category, fails build if multiple found)
+- Reads `Links.txt` files and embeds link data in generated pages
+- **Cache busting**: Appends git commit hash to CSS links (`styles.css?v=abc1234`)
 - Updates all navigation links and asset paths for GitHub Pages deployment
+
+### Caching Strategy
+- **Development**: No-cache headers ensure changes appear immediately
+- **Production**: Git commit hash appended to CSS URL forces browser refresh on new deployments
 
 ### GitHub Pages Deployment
 - Automated deployment via GitHub Actions on push to main
 - Uses Rust toolchain with dependency caching
 - Builds static files and deploys to GitHub Pages
-- Supports both main branch pushes and pull request previews
+- CSS version changes automatically on each commit (cache busting)
 
 ## Development Workflow
 
 1. **Adding New Pages**: Add route handler in `main.rs` and corresponding entry in `generate_static.rs`
 2. **Template Updates**: Modify templates in `templates/` directory - changes affect both dev server and static generation
-3. **Adding Images**: Place images in `templates/{category}/images/` - they'll be auto-discovered and copied to `docs/` by static generator
-4. **Testing Changes**: Use development server for rapid iteration, then generate static files to test final output
+3. **Adding Images**: Place images in `templates/modeling/{category}/images/` - they'll be auto-discovered and copied to `docs/` by static generator
+4. **Adding Image Links**: Create/edit `templates/modeling/{category}/images/Links.txt` with `imagename,url` mappings
+5. **Testing Changes**: Use development server for rapid iteration (no need to hard-refresh), then generate static files to test final output
+6. **Footer/Navigation Changes**: Edit `templates/base.html` - changes apply to all pages
 
 ## Deployment Setup
 

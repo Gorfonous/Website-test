@@ -411,22 +411,14 @@
 
 /* Call to action styling with enhanced visuals */
 .cta-section {
-    background: linear-gradient(135deg, rgba(255, 107, 157, 0.15), rgba(107, 115, 255, 0.15)) !important;
+    background: #ffffff !important;
     border: 2px solid rgba(107, 115, 255, 0.3) !important;
     position: relative !important;
     overflow: hidden !important;
 }
 
 .cta-section::before {
-    content: '' !important;
-    position: absolute !important;
-    top: -50% !important;
-    left: -50% !important;
-    width: 200% !important;
-    height: 200% !important;
-    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent) !important;
-    animation: shine 3s ease-in-out infinite !important;
-    pointer-events: none !important;
+    display: none !important;
 }
 
 @keyframes shine {

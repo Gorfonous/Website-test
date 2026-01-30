@@ -1,6 +1,7 @@
-use axum::{response::Html, routing::get, Router, Form};
+use axum::{response::Html, routing::get, Router, Form, http::header};
 use serde::Deserialize;
 use tower_http::services::ServeDir;
+use tower_http::set_header::SetResponseHeaderLayer;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
@@ -352,7 +353,11 @@ async fn main() {
         .route("/modeling/", get(unified_modeling_handler))
         .nest_service("/docs", ServeDir::new("docs"))
         .nest_service("/templates", ServeDir::new("templates"))
-        .with_state(templates.clone());
+        .with_state(templates.clone())
+        .layer(SetResponseHeaderLayer::overriding(
+            header::CACHE_CONTROL,
+            header::HeaderValue::from_static("no-cache, no-store, must-revalidate"),
+        ));
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
         .await
