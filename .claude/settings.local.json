@@ -6,7 +6,11 @@
       "Bash(tree:*)",
       "Bash(curl:*)",
       "Bash(move:*)",
-      "Bash(move templatesheadshots templatesmodelingheadshots)"
+      "Bash(move templatesheadshots templatesmodelingheadshots)",
+      "Bash(dir /b \"Z:\\\\EternalCataclysmStudios\\\\Website-test\\\\templates\\\\modeling\")",
+      "Bash(dir:*)",
+      "Bash(powershell:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

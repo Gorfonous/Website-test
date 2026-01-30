@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{TITLE}} - 4AmberTechel</title>
+    <title>Modeling Portfolio - 4AmberTechel</title>
     <style>
         * {
             margin: 0;
@@ -293,16 +293,121 @@
     <header class="header">
         <div class="logo">4AmberTechel</div>
         <nav class="nav-menu">
-            <a href="/" class="nav-item">Home</a>
-            <a href="/contact/" class="nav-item">Contact</a>
-            <a href="/modeling/" class="nav-item">Modeling</a>
+            <a href="/Website-test/index.html" class="nav-item">Home</a>
+            <a href="/Website-test/contact/index.html" class="nav-item">Contact</a>
+            <a href="/Website-test/modeling/index.html" class="nav-item">Modeling</a>
         </nav>
     </header>
 
     <div class="cart-indicator">CART (0)</div>
 
     <main class="main-content">
-        {{CONTENT}}
+        <section class="page-section">
+    <h1 class="page-title">Modeling Portfolio</h1>
+
+    <!-- Category Dropdown -->
+    <div class="category-selector">
+        <select id="categorySelect" onchange="switchCategory()">
+            <!-- Options populated from categoryData -->
+        </select>
+    </div>
+
+    <p class="page-subtitle" id="categorySubtitle"></p>
+
+    <div class="image-grid" id="imageGrid">
+        <!-- Images will be loaded dynamically -->
+    </div>
+
+    <div class="no-images-message" id="noImagesMessage">
+        <p>No images available yet.</p>
+    </div>
+</section>
+
+<script>
+    const categoryData = {"groupshots": {"title": "Groupshots", "subtitle": "Amber has had the pleasure of working with numerous models. Here are some of those top group photos taken by numerous photographers.", "images": ["./groupshots/images/97479019_679119952849816_777280336299032576_n.png", "./groupshots/images/IMG_0261.png", "./groupshots/images/One+Last+Dance+with+Stephen+Sibold+and+Genevieve+Wolfrum.png", "./groupshots/images/TECHEL_BONMARITO2.png", "./groupshots/images/TECHEL_BONMARITO212.png", "./groupshots/images/TECHEL_BONMARITO221.png", "./groupshots/images/TECHEL_BONMARITO24.png", "./groupshots/images/grabass.png", "./groupshots/images/photo+by+Shelby+VanScoyoc+with+Nate+Brassfield.png", "./groupshots/images/sensual+woman.png"], "links": {"grabass": "https://www.amazon.com/Multi-functional-Anti-Slip-Scissors-Vegetables-Stainless/dp/B0FJLTX686/?_encoding=UTF8&s=bazaar&psc=1&pd_rd_w=Y2r4b&content-id=amzn1.sym.37edf528-2032-48f8-bdeb-d3768d91e5b2&pf_rd_p=37edf528-2032-48f8-bdeb-d3768d91e5b2&pf_rd_r=X57MDAMQPNTT80DACA5J&pd_rd_wg=XRJZI&pd_rd_r=1fb60653-3875-4efc-8b57-b8167af5df4c&ref_=hul_hp_d_esc_reco_all_cat_nav_t1_no_ranker&pos=ib"}}, "headshots": {"title": "Headshots", "subtitle": "Here are some of the top head-shots of Amber by numerous photographers.", "images": ["./headshots/images/01.png", "./headshots/images/22519927_2024223884489787_7262998021420541196_o.png", "./headshots/images/22563631_10154921791732374_1346876554_o.png", "./headshots/images/87727704_2780533122012382_654539224770412544_n.png", "./headshots/images/88397675_519845218717651_5733259651957391360_n.png", "./headshots/images/AMBER+RODGER-408.png", "./headshots/images/AMBER+RODGER-606.png", "./headshots/images/B&w+flower+on+chest.png", "./headshots/images/Beautifyl+headshot+in+window.png", "./headshots/images/Black+Shirt+and+makeup+head+shot.png", "./headshots/images/DSC04809_preview.png", "./headshots/images/IMG_036690.png", "./headshots/images/Nova_Photography_Outdoor_Boudoir_Amber-10.png", "./headshots/images/Nova_Photography_Outdoor_Boudoir_Amber-11.png", "./headshots/images/Photo+by+Shelby+VanScoyoc.png", "./headshots/images/agony.png", "./headshots/images/beauty+light+sesnsual+B&w.png", "./headshots/images/candle+headshot.png", "./headshots/images/cant+bear+it+colord.png", "./headshots/images/dramatic+with+brice.png", "./headshots/images/headshot+#2+amberbedit.png", "./headshots/images/headshot+in+blue+and+white+amber+edit.png", "./headshots/images/piano+woman+#3.png", "./headshots/images/piano+woman+#5.png", "./headshots/images/red+dress+Hair.png", "./headshots/images/strawbery+wink+party+girl.png", "./headshots/images/tree+hair+down.png", "./headshots/images/tree+portraight.png", "./headshots/images/unspecified2L4QXPE9.png", "./headshots/images/unspecified9BL7NK0J.png", "./headshots/images/untitledshoot-1251.png", "./headshots/images/wet+hair.png", "./headshots/images/with+Mechelle.png", "./headshots/images/with+Peter3.png", "./headshots/images/with+peter.png"], "links": {"01": "https://www.amazon.com/s?k=48v+750w+ebike&adgrpid=185095384726&hvadid=779564310193&hvdev=c&hvexpln=0&hvlocphy=9017622&hvnetw=g&hvocijid=6776412423150174379--&hvqmt=b&hvrand=6776412423150174379&hvtargid=kwd-301933747389&hydadcr=4454_13487364_2460564&mcid=a48975fda2953b26b7534732d2ee67b0&tag=googhydr-20&ref=pd_sl_881rhdatux_b"}}};
+
+    function populateDropdown() {
+        const select = document.getElementById('categorySelect');
+        select.innerHTML = '';
+
+        const categories = Object.keys(categoryData);
+        categories.forEach(key => {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = categoryData[key].title;
+            select.appendChild(option);
+        });
+
+        if (categories.length > 0) {
+            switchCategory();
+        }
+    }
+
+    function switchCategory() {
+        const select = document.getElementById('categorySelect');
+        const category = select.value;
+        const data = categoryData[category];
+
+        if (!data) return;
+
+        document.getElementById('categorySubtitle').textContent = data.subtitle;
+
+        const imageGrid = document.getElementById('imageGrid');
+        const noImagesMessage = document.getElementById('noImagesMessage');
+        imageGrid.innerHTML = '';
+
+        if (data.images.length === 0) {
+            noImagesMessage.style.display = 'block';
+            return;
+        }
+
+        noImagesMessage.style.display = 'none';
+
+        data.images.forEach((imagePath, index) => {
+            createImageItem(imagePath, index + 1, data.title, data.links || {});
+        });
+    }
+
+    function getImageKey(imagePath) {
+        const filename = imagePath.split('/').pop();
+        const nameWithoutExt = filename.replace(/\.[^/.]+$/, '');
+        return decodeURIComponent(nameWithoutExt.replace(/\+/g, ' '));
+    }
+
+    function createImageItem(imagePath, index, categoryTitle, links) {
+        const imageGrid = document.getElementById('imageGrid');
+        const imageItem = document.createElement('div');
+        imageItem.className = 'image-item';
+
+        const img = document.createElement('img');
+        img.src = imagePath;
+        img.alt = `${categoryTitle} Image ${index}`;
+        img.loading = 'lazy';
+
+        const caption = document.createElement('div');
+        caption.className = 'image-caption';
+        caption.textContent = `${categoryTitle} ${index}`;
+
+        imageItem.appendChild(img);
+        imageItem.appendChild(caption);
+
+        const imageKey = getImageKey(imagePath);
+        const link = links[imageKey];
+
+        imageItem.addEventListener('click', function() {
+            if (link) {
+                window.open(link, '_blank');
+            } else {
+                window.open(imagePath, '_blank');
+            }
+        });
+
+        imageGrid.appendChild(imageItem);
+    }
+
+    document.addEventListener('DOMContentLoaded', populateDropdown);
+</script>
+
     </main>
 </body>
 </html>

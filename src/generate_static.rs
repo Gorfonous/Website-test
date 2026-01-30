@@ -1,31 +1,12 @@
 use std::fs;
 use std::path::Path;
 
-fn generate_navigation_items_static(categories: &[String]) -> String {
-    let mut navigation_items = Vec::new();
-    
-    for category in categories {
-        let title = {
-            let mut chars = category.chars();
-            match chars.next() {
-                None => category.clone(),
-                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-            }
-        };
-        navigation_items.push(format!("                    <a href=\"/Website-test/modeling/{}/index.html\">{}</a>", category, title));
-    }
-    
-    navigation_items.join("\n")
-}
-
-fn generate_page(_page_name: &str, title: &str, content: &str, categories: &[String]) -> String {
+fn generate_page(title: &str, content: &str) -> String {
     let base_template = include_str!("../templates/base.html");
-    let navigation_items = generate_navigation_items_static(categories);
     let mut final_html = base_template
         .replace("{{TITLE}}", title)
-        .replace("{{CONTENT}}", content)
-        .replace("{{NAVIGATION_ITEMS}}", &navigation_items);
-    
+        .replace("{{CONTENT}}", content);
+
     // Update navigation links for GitHub Pages (static generation)
     final_html = final_html.replace(
         r#"<a href="/" class="nav-item">Home</a>"#,
@@ -35,47 +16,43 @@ fn generate_page(_page_name: &str, title: &str, content: &str, categories: &[Str
         r#"<a href="/contact/" class="nav-item">Contact</a>"#,
         r#"<a href="/Website-test/contact/index.html" class="nav-item">Contact</a>"#
     );
-    
+    final_html = final_html.replace(
+        r#"<a href="/modeling/" class="nav-item">Modeling</a>"#,
+        r#"<a href="/Website-test/modeling/index.html" class="nav-item">Modeling</a>"#
+    );
+
     // Update image paths for GitHub Pages deployment
     final_html = final_html.replace(
         r#"src="/templates/global-images/"#,
         r#"src="/Website-test/global-images/"#
     );
-    final_html = final_html.replace(
-        r#"album-cover.png"#,
-        r#"album-cover.png"#
-    );
-    
+
     // Update CSS path for GitHub Pages deployment
     final_html = final_html.replace(
         r#"href="/templates/styles.css""#,
         r#"href="/Website-test/styles.css""#
     );
-    
-    // Keep Formspree form action for static generation (works on GitHub Pages)
-    
+
     final_html
 }
 
-
-fn get_image_list_for_web(images_dir: &Path, _category: &str) -> Vec<String> {
+fn get_image_list_for_web(images_dir: &Path, category: &str) -> Vec<String> {
     let mut images = Vec::new();
-    
+
     if images_dir.exists() {
         if let Ok(entries) = fs::read_dir(images_dir) {
             for entry in entries.flatten() {
                 if let Some(extension) = entry.path().extension() {
                     if matches!(extension.to_str(), Some("png") | Some("jpg") | Some("jpeg")) {
                         if let Some(filename) = entry.file_name().to_str() {
-                            images.push(format!("./images/{}", filename));
+                            images.push(format!("./{}/images/{}", category, filename));
                         }
                     }
                 }
             }
         }
     }
-    
-    // Sort images naturally (1.png, 2.png, 3.png, etc.)
+
     images.sort();
     images
 }
@@ -84,14 +61,12 @@ fn copy_images(source_dir: &Path, dest_dir: &Path) {
     if !source_dir.exists() {
         return;
     }
-    
-    // Create destination directory if it doesn't exist
-    if let Err(_) = fs::create_dir_all(dest_dir) {
+
+    if fs::create_dir_all(dest_dir).is_err() {
         println!("Failed to create directory: {:?}", dest_dir);
         return;
     }
-    
-    // Copy all image files
+
     if let Ok(entries) = fs::read_dir(source_dir) {
         for entry in entries.flatten() {
             if let Some(extension) = entry.path().extension() {
@@ -99,7 +74,7 @@ fn copy_images(source_dir: &Path, dest_dir: &Path) {
                     if let Some(filename) = entry.file_name().to_str() {
                         let source_file = source_dir.join(filename);
                         let dest_file = dest_dir.join(filename);
-                        
+
                         if let Err(e) = fs::copy(&source_file, &dest_file) {
                             println!("Failed to copy {:?} to {:?}: {}", source_file, dest_file, e);
                         } else {
@@ -112,133 +87,172 @@ fn copy_images(source_dir: &Path, dest_dir: &Path) {
     }
 }
 
-fn check_background_image(background_dir: &Path, location: &str) -> Result<Option<String>, String> {
-    if !background_dir.exists() {
-        return Ok(None);
-    }
-    
-    let mut background_images = Vec::new();
-    
-    if let Ok(entries) = fs::read_dir(background_dir) {
-        for entry in entries.flatten() {
-            if let Some(extension) = entry.path().extension() {
-                if matches!(extension.to_str(), Some("png") | Some("jpg") | Some("jpeg")) {
-                    if let Some(filename) = entry.file_name().to_str() {
-                        background_images.push(filename.to_string());
-                    }
+use std::collections::HashMap;
+
+struct CategoryData {
+    title: String,
+    subtitle: String,
+    images: Vec<String>,
+    links: HashMap<String, String>,
+}
+
+fn read_links_file(images_dir: &Path) -> HashMap<String, String> {
+    let mut links = HashMap::new();
+    let links_file = images_dir.join("Links.txt");
+
+    if links_file.exists() {
+        if let Ok(content) = fs::read_to_string(&links_file) {
+            for line in content.lines() {
+                let line = line.trim();
+                if line.is_empty() {
+                    continue;
+                }
+                if let Some((name, url)) = line.split_once(',') {
+                    links.insert(name.trim().to_string(), url.trim().to_string());
                 }
             }
         }
     }
-    
-    match background_images.len() {
-        0 => Ok(None),
-        1 => Ok(Some(format!("./Background/{}", background_images[0]))),
-        _ => Err(format!("ERROR: Multiple background images found in {}: {:?}", location, background_images)),
-    }
+
+    links
 }
 
-fn generate_modeling_page(category: &str, title: &str, content: &str, docs_dir: &Path, categories: &[String]) -> Result<String, String> {
-    let templates_images_dir = Path::new("templates").join("modeling").join(category).join("images");
-    let templates_background_dir = Path::new("templates").join("modeling").join(category).join("Background");
-    let templates_title_file = Path::new("templates").join("modeling").join(category).join("subtitle.txt");
-    let docs_images_dir = docs_dir.join("modeling").join(category).join("images");
-    let docs_background_dir = docs_dir.join("modeling").join(category).join("Background");
-    
-    // Read custom title if it exists
-    let custom_title = if templates_title_file.exists() {
-        match fs::read_to_string(&templates_title_file) {
-            Ok(content) => Some(content.trim().to_string()),
-            Err(_) => None,
+fn discover_modeling_categories(docs_dir: &Path) -> Vec<(String, CategoryData)> {
+    let mut categories = Vec::new();
+    let modeling_dir = Path::new("templates").join("modeling");
+
+    if !modeling_dir.exists() {
+        return categories;
+    }
+
+    if let Ok(entries) = fs::read_dir(&modeling_dir) {
+        for entry in entries.flatten() {
+            if entry.path().is_dir() {
+                let category_name = entry.file_name().to_str().unwrap_or("").to_string();
+
+                let images_dir = entry.path().join("images");
+                if !images_dir.exists() {
+                    continue;
+                }
+
+                let title = {
+                    let mut chars = category_name.chars();
+                    match chars.next() {
+                        None => continue,
+                        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                    }
+                };
+
+                let subtitle_file = entry.path().join("subtitle.txt");
+                let subtitle = if subtitle_file.exists() {
+                    fs::read_to_string(&subtitle_file)
+                        .map(|s| s.trim().to_string())
+                        .unwrap_or_else(|_| format!("Professional {} photography", category_name))
+                } else {
+                    format!("Professional {} photography", category_name)
+                };
+
+                let docs_images_dir = docs_dir.join("modeling").join(&category_name).join("images");
+                copy_images(&images_dir, &docs_images_dir);
+
+                let images = get_image_list_for_web(&images_dir, &category_name);
+                let links = read_links_file(&images_dir);
+
+                categories.push((category_name, CategoryData {
+                    title,
+                    subtitle,
+                    images,
+                    links,
+                }));
+            }
         }
-    } else {
-        None
-    };
-    
-    // Check for background image
-    let background_image = check_background_image(&templates_background_dir, &format!("templates/modeling/{}/Background", category))?;
-    
-    // Copy images from templates to docs directory
-    copy_images(&templates_images_dir, &docs_images_dir);
-    
-    // Copy background image if it exists
-    if background_image.is_some() {
-        copy_images(&templates_background_dir, &docs_background_dir);
     }
-    
-    let image_list = get_image_list_for_web(&templates_images_dir, category);
-    
-    let image_paths_js = if image_list.is_empty() {
-        "[]".to_string()
-    } else {
-        format!("[{}]", image_list.iter().map(|img| format!("'{}'", img)).collect::<Vec<_>>().join(", "))
-    };
-    
-    let mut updated_content = content.replace("{{IMAGE_PATHS}}", &image_paths_js);
-    
-    // Replace custom title if it exists, otherwise use default
-    if let Some(ref custom_text) = custom_title {
-        updated_content = updated_content.replace("{{CUSTOM_TITLE}}", custom_text);
-        println!("Applied custom title from subtitle.txt: {}", custom_text);
-    } else {
-        updated_content = updated_content.replace("{{CUSTOM_TITLE}}", "Professional portrait photography for actors, models, and business professionals");
+
+    categories.sort_by(|a, b| a.0.cmp(&b.0));
+    categories
+}
+
+fn generate_categories_json(categories: &[(String, CategoryData)]) -> String {
+    let mut json_parts = Vec::new();
+
+    for (key, data) in categories {
+        let images_json: Vec<String> = data.images.iter().map(|img| format!("\"{}\"", img)).collect();
+        let escaped_subtitle = data.subtitle
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\n", " ")
+            .replace("\r", "");
+
+        let links_json: Vec<String> = data.links.iter()
+            .map(|(k, v)| format!("\"{}\": \"{}\"", k, v.replace("\"", "\\\"")))
+            .collect();
+
+        json_parts.push(format!(
+            "\"{}\": {{\"title\": \"{}\", \"subtitle\": \"{}\", \"images\": [{}], \"links\": {{{}}}}}",
+            key,
+            data.title,
+            escaped_subtitle,
+            images_json.join(", "),
+            links_json.join(", ")
+        ));
     }
-    
+
+    format!("{{{}}}", json_parts.join(", "))
+}
+
+fn generate_modeling_page(content: &str, categories: &[(String, CategoryData)]) -> String {
+    let categories_json = generate_categories_json(categories);
+    let updated_content = content.replace("{{CATEGORIES_JSON}}", &categories_json);
+
     let base_template = include_str!("../templates/base.html");
-    let navigation_items = generate_navigation_items_static(categories);
     let mut final_html = base_template
-        .replace("{{TITLE}}", title)
-        .replace("{{CONTENT}}", &updated_content)
-        .replace("{{NAVIGATION_ITEMS}}", &navigation_items);
-    
+        .replace("{{TITLE}}", "Modeling Portfolio")
+        .replace("{{CONTENT}}", &updated_content);
+
     // Update navigation links for GitHub Pages (static generation)
     final_html = final_html.replace(
         r#"<a href="/" class="nav-item">Home</a>"#,
         r#"<a href="/Website-test/index.html" class="nav-item">Home</a>"#
     );
-    
+    final_html = final_html.replace(
+        r#"<a href="/contact/" class="nav-item">Contact</a>"#,
+        r#"<a href="/Website-test/contact/index.html" class="nav-item">Contact</a>"#
+    );
+    final_html = final_html.replace(
+        r#"<a href="/modeling/" class="nav-item">Modeling</a>"#,
+        r#"<a href="/Website-test/modeling/index.html" class="nav-item">Modeling</a>"#
+    );
+
     // Update CSS path for GitHub Pages deployment
     final_html = final_html.replace(
         r#"href="/templates/styles.css""#,
         r#"href="/Website-test/styles.css""#
     );
-    
-    // Replace background if one exists
-    if let Some(bg_path) = background_image {
-        final_html = final_html.replace(
-            "background: linear-gradient(45deg, #ff6b9d, #c44faf, #8b5fbf, #6b73ff);",
-            &format!("background: url('{}') center center/cover no-repeat fixed;", bg_path)
-        );
-        // Remove the background animation properties since we have a static image
-        final_html = final_html.replace("background-size: 400% 400%;", "");
-        final_html = final_html.replace("animation: gradientShift 15s ease infinite;", "");
-        println!("Applied background image: {}", bg_path);
-    }
-    
-    Ok(final_html)
+
+    final_html
 }
 
 fn create_dir_if_not_exists(path: &Path) {
     if !path.exists() {
-        fs::create_dir_all(path).expect(&format!("Failed to create directory: {:?}", path));
+        fs::create_dir_all(path).unwrap_or_else(|_| panic!("Failed to create directory: {:?}", path));
     }
 }
 
 fn main() {
     let docs_dir = Path::new("docs");
-    
+
     // Clean and rebuild the entire docs directory structure
     if docs_dir.exists() {
         fs::remove_dir_all(docs_dir).expect("Failed to remove existing docs directory");
         println!("Cleaned existing docs directory");
     }
-    
+
     create_dir_if_not_exists(docs_dir);
-    
+
     // Copy CSS file from templates to docs
     let templates_css = Path::new("templates").join("styles.css");
     let docs_css = docs_dir.join("styles.css");
-    
+
     if templates_css.exists() {
         if let Err(e) = fs::copy(&templates_css, &docs_css) {
             println!("Failed to copy CSS file: {}", e);
@@ -246,11 +260,11 @@ fn main() {
             println!("Copied styles.css to docs directory");
         }
     }
-    
+
     // Copy global images folder from templates to docs
     let templates_global_images = Path::new("templates").join("global-images");
     let docs_global_images = docs_dir.join("global-images");
-    
+
     if templates_global_images.exists() {
         create_dir_if_not_exists(&docs_global_images);
         copy_images(&templates_global_images, &docs_global_images);
@@ -258,125 +272,46 @@ fn main() {
 
     // Create modeling subdirectory
     create_dir_if_not_exists(&docs_dir.join("modeling"));
-    
-    // First, discover all modeling categories
-    let modeling_dir = Path::new("templates").join("modeling");
-    let mut categories = Vec::new();
-    
-    if modeling_dir.exists() {
-        if let Ok(entries) = fs::read_dir(&modeling_dir) {
-            for entry in entries.flatten() {
-                if entry.path().is_dir() {
-                    let category_name = entry.file_name().to_str().unwrap().to_string();
-                    let html_file = modeling_dir.join(&category_name).join(format!("{}.html", category_name));
-                    
-                    if html_file.exists() {
-                        categories.push(category_name);
-                    }
-                }
-            }
-        }
+
+    // Discover modeling categories and copy their images
+    let categories = discover_modeling_categories(docs_dir);
+    println!("\nModeling categories discovered:");
+    for (name, data) in &categories {
+        println!("  - {} ({} images)", name, data.images.len());
     }
-    categories.sort(); // Sort for consistent ordering
-    
-    // Discover other pages (like contact)
-    let templates_dir = Path::new("templates");
-    let mut other_pages = Vec::new();
-    
-    if let Ok(entries) = fs::read_dir(&templates_dir) {
-        for entry in entries.flatten() {
-            if entry.path().is_dir() {
-                let folder_name = entry.file_name().to_str().unwrap().to_string();
-                
-                // Skip modeling directory and certain folders
-                if folder_name == "modeling" || folder_name == "global-images" {
-                    continue;
-                }
-                
-                let html_file = entry.path().join(format!("{}.html", folder_name));
-                if html_file.exists() {
-                    other_pages.push((folder_name.clone(), html_file));
-                }
-            }
-        }
-    }
-    
-    // Generate home page first
+
+    // Generate home page
     let home_content = include_str!("../templates/index.html");
-    let home_html = generate_page("", "Home", home_content, &categories);
+    let home_html = generate_page("Home", home_content);
     let home_file_path = docs_dir.join("index.html");
     fs::write(&home_file_path, home_html).expect("Failed to write index.html");
     println!("Generated index.html");
-    
-    // Generate modeling pages
-    for category_name in &categories {
-        let html_file = modeling_dir.join(category_name).join(format!("{}.html", category_name));
-        
-        // Create category directory and images folder
-        let category_path = docs_dir.join("modeling").join(category_name);
-        create_dir_if_not_exists(&category_path);
-        create_dir_if_not_exists(&category_path.join("images"));
-        
-        // Generate title (capitalize first letter)
-        let title = {
-            let mut chars = category_name.chars();
-            match chars.next() {
-                None => "Portfolio".to_string(),
-                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-            }
-        };
-        
-        // Read the HTML content
-        match fs::read_to_string(&html_file) {
+
+    // Generate unified modeling page
+    let modeling_content = include_str!("../templates/modeling/modeling.html");
+    let modeling_html = generate_modeling_page(modeling_content, &categories);
+    let modeling_path = docs_dir.join("modeling").join("index.html");
+    fs::write(&modeling_path, modeling_html).expect("Failed to write modeling/index.html");
+    println!("Generated modeling/index.html");
+
+    // Generate contact page
+    let contact_dir = docs_dir.join("contact");
+    create_dir_if_not_exists(&contact_dir);
+
+    let contact_path = Path::new("templates").join("contact").join("contact.html");
+    if contact_path.exists() {
+        match fs::read_to_string(&contact_path) {
             Ok(content) => {
-                match generate_modeling_page(category_name, &title, &content, docs_dir, &categories) {
-                    Ok(html) => {
-                        let file_path = docs_dir.join("modeling").join(category_name).join("index.html");
-                        fs::write(&file_path, html).expect(&format!("Failed to write modeling/{}/index.html", category_name));
-                        println!("Generated modeling/{}/index.html", category_name);
-                    },
-                    Err(error) => {
-                        eprintln!("{}", error);
-                        eprintln!("Failed to generate: modeling/{}/index.html", category_name);
-                        std::process::exit(1);
-                    }
-                }
-                println!("Found modeling category: {}", category_name);
+                let html = generate_page("Contact", &content);
+                let file_path = contact_dir.join("index.html");
+                fs::write(&file_path, html).expect("Failed to write contact/index.html");
+                println!("Generated contact/index.html");
             },
             Err(e) => {
-                println!("Failed to read {}: {}", html_file.display(), e);
-            }
-        }
-    }
-    
-    // Generate other pages (like contact)
-    for (page_name, html_file) in &other_pages {
-        // Create page directory
-        let page_path = docs_dir.join(page_name);
-        create_dir_if_not_exists(&page_path);
-        
-        // Generate title (capitalize first letter)
-        let title = {
-            let mut chars = page_name.chars();
-            match chars.next() {
-                None => "Page".to_string(),
-                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-            }
-        };
-        
-        // Read the HTML content
-        match fs::read_to_string(html_file) {
-            Ok(content) => {
-                let html = generate_page("", &title, &content, &categories);
-                let file_path = page_path.join("index.html");
-                fs::write(&file_path, html).expect(&format!("Failed to write {}/index.html", page_name));
-                println!("Generated {}/index.html", page_name);
-            },
-            Err(e) => {
-                println!("Failed to read {}: {}", html_file.display(), e);
+                println!("Failed to read contact template: {}", e);
             }
         }
     }
 
-    println!("Static files generated for all discovered pages");
+    println!("\nStatic files generated successfully!");
 }

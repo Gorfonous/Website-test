@@ -137,6 +137,32 @@
             text-align: center;
         }
 
+        .category-selector {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .category-selector select {
+            padding: 0.8rem 2rem;
+            font-size: 1.1rem;
+            border: 2px solid #6b73ff;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .category-selector select:hover {
+            background: #6b73ff;
+            color: white;
+        }
+
+        .category-selector select:focus {
+            box-shadow: 0 0 10px rgba(107, 115, 255, 0.5);
+        }
+
         .content-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -269,13 +295,7 @@
         <nav class="nav-menu">
             <a href="/Website-test/index.html" class="nav-item">Home</a>
             <a href="/Website-test/contact/index.html" class="nav-item">Contact</a>
-            <div class="modeling-dropdown">
-                <a href="#" class="nav-item">Modeling</a>
-                <div class="dropdown-content">
-                                        <a href="/Website-test/modeling/groupshots/index.html">Groupshots</a>
-                    <a href="/Website-test/modeling/headshots/index.html">Headshots</a>
-                </div>
-            </div>
+            <a href="/Website-test/modeling/index.html" class="nav-item">Modeling</a>
         </nav>
     </header>
 
@@ -290,7 +310,7 @@
         <div class="contact-form-section">
             <div class="contact-form">
                 <h2>Send a Message</h2>
-                <form class="message-form" onsubmit="submitToGitHub(event)">
+                <form class="message-form" onsubmit="handleSubmit(event)">
                     <div class="form-group">
                         <label for="name">Name</label>
                         <input type="text" id="name" name="name" required placeholder="Your name">

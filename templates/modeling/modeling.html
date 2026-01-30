@@ -1,0 +1,105 @@
+<section class="page-section">
+    <h1 class="page-title">Modeling Portfolio</h1>
+
+    <!-- Category Dropdown -->
+    <div class="category-selector">
+        <select id="categorySelect" onchange="switchCategory()">
+            <!-- Options populated from categoryData -->
+        </select>
+    </div>
+
+    <p class="page-subtitle" id="categorySubtitle"></p>
+
+    <div class="image-grid" id="imageGrid">
+        <!-- Images will be loaded dynamically -->
+    </div>
+
+    <div class="no-images-message" id="noImagesMessage">
+        <p>No images available yet.</p>
+    </div>
+</section>
+
+<script>
+    const categoryData = {{CATEGORIES_JSON}};
+
+    function populateDropdown() {
+        const select = document.getElementById('categorySelect');
+        select.innerHTML = '';
+
+        const categories = Object.keys(categoryData);
+        categories.forEach(key => {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = categoryData[key].title;
+            select.appendChild(option);
+        });
+
+        if (categories.length > 0) {
+            switchCategory();
+        }
+    }
+
+    function switchCategory() {
+        const select = document.getElementById('categorySelect');
+        const category = select.value;
+        const data = categoryData[category];
+
+        if (!data) return;
+
+        document.getElementById('categorySubtitle').textContent = data.subtitle;
+
+        const imageGrid = document.getElementById('imageGrid');
+        const noImagesMessage = document.getElementById('noImagesMessage');
+        imageGrid.innerHTML = '';
+
+        if (data.images.length === 0) {
+            noImagesMessage.style.display = 'block';
+            return;
+        }
+
+        noImagesMessage.style.display = 'none';
+
+        data.images.forEach((imagePath, index) => {
+            createImageItem(imagePath, index + 1, data.title, data.links || {});
+        });
+    }
+
+    function getImageKey(imagePath) {
+        const filename = imagePath.split('/').pop();
+        const nameWithoutExt = filename.replace(/\.[^/.]+$/, '');
+        return decodeURIComponent(nameWithoutExt.replace(/\+/g, ' '));
+    }
+
+    function createImageItem(imagePath, index, categoryTitle, links) {
+        const imageGrid = document.getElementById('imageGrid');
+        const imageItem = document.createElement('div');
+        imageItem.className = 'image-item';
+
+        const img = document.createElement('img');
+        img.src = imagePath;
+        img.alt = `${categoryTitle} Image ${index}`;
+        img.loading = 'lazy';
+
+        const caption = document.createElement('div');
+        caption.className = 'image-caption';
+        caption.textContent = `${categoryTitle} ${index}`;
+
+        imageItem.appendChild(img);
+        imageItem.appendChild(caption);
+
+        const imageKey = getImageKey(imagePath);
+        const link = links[imageKey];
+
+        imageItem.addEventListener('click', function() {
+            if (link) {
+                window.open(link, '_blank');
+            } else {
+                window.open(imagePath, '_blank');
+            }
+        });
+
+        imageGrid.appendChild(imageItem);
+    }
+
+    document.addEventListener('DOMContentLoaded', populateDropdown);
+</script>

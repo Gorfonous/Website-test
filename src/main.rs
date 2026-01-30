@@ -1,4 +1,4 @@
-use axum::{extract::Path as AxumPath, response::Html, routing::{get, post}, Router, Form};
+use axum::{response::Html, routing::get, Router, Form};
 use serde::Deserialize;
 use tower_http::services::ServeDir;
 use std::collections::HashMap;
@@ -21,47 +21,16 @@ fn url_encode(input: &str) -> String {
         .collect()
 }
 
-fn generate_navigation_items(templates: &HashMap<String, PageTemplate>) -> String {
-    let mut navigation_items = Vec::new();
-    
-    // Collect all modeling categories
-    let mut modeling_categories: Vec<String> = templates
-        .values()
-        .filter(|template| template.is_modeling && template.category.is_some())
-        .map(|template| template.category.as_ref().unwrap().clone())
-        .collect();
-    
-    // Remove duplicates and sort
-    modeling_categories.sort();
-    modeling_categories.dedup();
-    
-    // Generate HTML for each category
-    for category in modeling_categories {
-        let title = {
-            let mut chars = category.chars();
-            match chars.next() {
-                None => category.clone(),
-                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-            }
-        };
-        navigation_items.push(format!("                    <a href=\"/modeling/{}/\">{}</a>", category, title));
-    }
-    
-    navigation_items.join("\n")
-}
-
-fn generate_page(title: &str, content: &str, templates: &HashMap<String, PageTemplate>) -> String {
+fn generate_page(title: &str, content: &str) -> String {
     let base_template = include_str!("../templates/base.html");
-    let navigation_items = generate_navigation_items(templates);
     base_template
         .replace("{{TITLE}}", title)
         .replace("{{CONTENT}}", content)
-        .replace("{{NAVIGATION_ITEMS}}", &navigation_items)
 }
 
-fn get_image_list(images_dir: &Path) -> Vec<String> {
+fn get_image_list(images_dir: &Path, category: &str) -> Vec<String> {
     let mut images = Vec::new();
-    
+
     if images_dir.exists() {
         if let Ok(entries) = fs::read_dir(images_dir) {
             for entry in entries.flatten() {
@@ -69,46 +38,30 @@ fn get_image_list(images_dir: &Path) -> Vec<String> {
                     if extension.to_str() == Some("png") || extension.to_str() == Some("jpg") || extension.to_str() == Some("jpeg") {
                         if let Some(filename) = entry.file_name().to_str() {
                             let url_encoded_filename = url_encode(filename);
-                            images.push(format!("/templates/modeling/{}/images/{}", images_dir.parent().unwrap().file_name().unwrap().to_str().unwrap(), url_encoded_filename));
+                            images.push(format!("/templates/modeling/{}/images/{}", category, url_encoded_filename));
                         }
                     }
                 }
             }
         }
     }
-    
-    // Sort images naturally (1.png, 2.png, 3.png, etc.)
+
     images.sort();
     images
-}
-
-fn check_background_image_dev(background_dir: &Path) -> Option<String> {
-    if !background_dir.exists() {
-        return None;
-    }
-    
-    if let Ok(entries) = fs::read_dir(background_dir) {
-        for entry in entries.flatten() {
-            if let Some(extension) = entry.path().extension() {
-                if extension.to_str() == Some("png") || extension.to_str() == Some("jpg") || extension.to_str() == Some("jpeg") {
-                    if let Some(filename) = entry.file_name().to_str() {
-                        let category = background_dir.parent().unwrap().file_name().unwrap().to_str().unwrap();
-                        return Some(format!("/templates/modeling/{}/Background/{}", category, filename));
-                    }
-                }
-            }
-        }
-    }
-    
-    None
 }
 
 #[derive(Clone, Debug)]
 struct PageTemplate {
     title: String,
     content: String,
-    is_modeling: bool,
-    category: Option<String>,
+}
+
+#[derive(Clone, Debug)]
+struct CategoryData {
+    title: String,
+    subtitle: String,
+    images: Vec<String>,
+    links: HashMap<String, String>,
 }
 
 #[derive(Deserialize)]
@@ -122,7 +75,7 @@ struct ContactForm {
 fn discover_templates() -> Result<HashMap<String, PageTemplate>, Box<dyn std::error::Error>> {
     let mut templates = HashMap::new();
     let templates_dir = Path::new("templates");
-    
+
     // Handle index.html as root page
     let index_path = templates_dir.join("index.html");
     if index_path.exists() {
@@ -130,215 +83,168 @@ fn discover_templates() -> Result<HashMap<String, PageTemplate>, Box<dyn std::er
         templates.insert("/".to_string(), PageTemplate {
             title: "Home".to_string(),
             content,
-            is_modeling: false,
-            category: None,
         });
     }
-    
-    // Recursively scan for other HTML files
-    scan_directory(&templates_dir, &mut templates, "")?;
-    
+
+    // Handle contact page
+    let contact_path = templates_dir.join("contact").join("contact.html");
+    if contact_path.exists() {
+        let content = fs::read_to_string(&contact_path)?;
+        templates.insert("/contact/".to_string(), PageTemplate {
+            title: "Contact".to_string(),
+            content,
+        });
+    }
+
+    // Handle unified modeling page
+    let modeling_path = templates_dir.join("modeling").join("modeling.html");
+    if modeling_path.exists() {
+        let content = fs::read_to_string(&modeling_path)?;
+        templates.insert("/modeling/".to_string(), PageTemplate {
+            title: "Modeling Portfolio".to_string(),
+            content,
+        });
+    }
+
     Ok(templates)
 }
 
-fn scan_directory(dir: &Path, templates: &mut HashMap<String, PageTemplate>, base_path: &str) -> Result<(), Box<dyn std::error::Error>> {
-    if !dir.exists() {
-        return Ok(());
+fn read_links_file(images_dir: &Path) -> HashMap<String, String> {
+    let mut links = HashMap::new();
+    let links_file = images_dir.join("Links.txt");
+
+    if links_file.exists() {
+        if let Ok(content) = fs::read_to_string(&links_file) {
+            for line in content.lines() {
+                let line = line.trim();
+                if line.is_empty() {
+                    continue;
+                }
+                if let Some((name, url)) = line.split_once(',') {
+                    links.insert(name.trim().to_string(), url.trim().to_string());
+                }
+            }
+        }
     }
-    
-    for entry in fs::read_dir(dir)? {
-        let entry = entry?;
-        let path = entry.path();
-        
-        if path.is_dir() {
-            let folder_name = path.file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("");
-            
-            // Skip certain directories
-            if folder_name == "images" || folder_name == "Background" {
-                continue;
-            }
-            
-            let new_base_path = if base_path.is_empty() {
-                folder_name.to_string()
-            } else {
-                format!("{}/{}", base_path, folder_name)
-            };
-            
-            scan_directory(&path, templates, &new_base_path)?;
-        } else if path.extension().and_then(|s| s.to_str()) == Some("html") {
-            let filename = path.file_stem()
-                .and_then(|n| n.to_str())
-                .unwrap_or("");
-            
-            // Skip base.html and index.html (index is handled separately)
-            if filename == "base" || (filename == "index" && base_path.is_empty()) {
-                continue;
-            }
-            
-            let content = fs::read_to_string(&path)?;
-            
-            // Determine route path and check if this is a modeling page
-            let (route_path, is_modeling, category) = if base_path == "modeling" {
-                // This is in the modeling directory
-                (format!("/modeling/{}/", filename), true, Some(filename.to_string()))
-            } else if base_path.starts_with("modeling/") {
-                // This is nested in modeling directory (e.g., "modeling/headshots")
-                let category_name = base_path.strip_prefix("modeling/").unwrap();
-                (format!("/modeling/{}/", category_name), true, Some(category_name.to_string()))
-            } else if base_path.is_empty() {
-                // This is at the top level
-                (format!("/{}/", filename), false, None)
-            } else {
-                // This is in some other subdirectory
-                (format!("/{}/", base_path), false, None)
-            };
-            
-            // Generate title from path
-            let title = if is_modeling {
-                // Capitalize first letter of category name
-                if let Some(ref cat) = category {
-                    let mut chars = cat.chars();
+
+    links
+}
+
+fn discover_modeling_categories() -> HashMap<String, CategoryData> {
+    let mut categories = HashMap::new();
+    let modeling_dir = Path::new("templates").join("modeling");
+
+    if !modeling_dir.exists() {
+        return categories;
+    }
+
+    if let Ok(entries) = fs::read_dir(&modeling_dir) {
+        for entry in entries.flatten() {
+            if entry.path().is_dir() {
+                let category_name = entry.file_name().to_str().unwrap_or("").to_string();
+
+                let images_dir = entry.path().join("images");
+                if !images_dir.exists() {
+                    continue;
+                }
+
+                let title = {
+                    let mut chars = category_name.chars();
                     match chars.next() {
-                        None => "Portfolio".to_string(),
+                        None => continue,
                         Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
                     }
+                };
+
+                let subtitle_file = entry.path().join("subtitle.txt");
+                let subtitle = if subtitle_file.exists() {
+                    fs::read_to_string(&subtitle_file)
+                        .map(|s| s.trim().to_string())
+                        .unwrap_or_else(|_| format!("Professional {} photography", category_name))
                 } else {
-                    "Portfolio".to_string()
-                }
-            } else {
-                // Capitalize first letter of filename
-                let mut chars = filename.chars();
-                match chars.next() {
-                    None => "Page".to_string(),
-                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-                }
-            };
-            
-            templates.insert(route_path.clone(), PageTemplate {
-                title,
-                content,
-                is_modeling,
-                category,
-            });
-        }
-    }
-    
-    Ok(())
-}
+                    format!("Professional {} photography", category_name)
+                };
 
-fn generate_modeling_page(category: &str, title: &str, content: &str, templates: &HashMap<String, PageTemplate>) -> String {
-    let templates_images_dir = Path::new("templates").join("modeling").join(category).join("images");
-    let templates_background_dir = Path::new("templates").join("modeling").join(category).join("Background");
-    let templates_title_file = Path::new("templates").join("modeling").join(category).join("subtitle.txt");
-    let image_list = get_image_list(&templates_images_dir);
-    
-    // Read custom title if it exists
-    let custom_title = if templates_title_file.exists() {
-        match fs::read_to_string(&templates_title_file) {
-            Ok(content) => Some(content.trim().to_string()),
-            Err(_) => None,
-        }
-    } else {
-        None
-    };
-    
-    // Check for background image (for dev server, we don't fail on multiple images)
-    let background_image = check_background_image_dev(&templates_background_dir);
-    
-    let image_paths_js = if image_list.is_empty() {
-        "[]".to_string()
-    } else {
-        format!("[{}]", image_list.iter().map(|img| format!("'{}'", img)).collect::<Vec<_>>().join(", "))
-    };
-    
-    let mut updated_content = content.replace("{{IMAGE_PATHS}}", &image_paths_js);
-    
-    // Replace custom title if it exists, otherwise use default
-    if let Some(ref custom_text) = custom_title {
-        updated_content = updated_content.replace("{{CUSTOM_TITLE}}", custom_text);
-    } else {
-        updated_content = updated_content.replace("{{CUSTOM_TITLE}}", "Professional portrait photography for actors, models, and business professionals");
-    }
-    
-    let base_template = include_str!("../templates/base.html");
-    let navigation_items = generate_navigation_items(templates);
-    let mut final_html = base_template
-        .replace("{{TITLE}}", title)
-        .replace("{{CONTENT}}", &updated_content)
-        .replace("{{NAVIGATION_ITEMS}}", &navigation_items);
-    
-    // Replace background if one exists
-    if let Some(bg_path) = background_image {
-        final_html = final_html.replace(
-            "background: linear-gradient(45deg, #ff6b9d, #c44faf, #8b5fbf, #6b73ff);",
-            &format!("background: url('{}') center center/cover no-repeat fixed;", bg_path)
-        );
-        // Remove the background animation properties since we have a static image
-        final_html = final_html.replace("background-size: 400% 400%;", "");
-        final_html = final_html.replace("animation: gradientShift 15s ease infinite;", "");
-    }
-    
-    final_html
-}
+                let images = get_image_list(&images_dir, &category_name);
+                let links = read_links_file(&images_dir);
 
-// Dynamic page handler for modeling pages
-async fn dynamic_modeling_handler(AxumPath(category): AxumPath<String>, templates: axum::extract::State<HashMap<String, PageTemplate>>) -> Result<Html<String>, axum::response::Response> {
-    let normalized_path = format!("/modeling/{}/", category);
-    
-    if let Some(template) = templates.get(&normalized_path) {
-        let html_content = if template.is_modeling {
-            if let Some(ref category) = template.category {
-                generate_modeling_page(category, &template.title, &template.content, &templates)
-            } else {
-                generate_page(&template.title, &template.content, &templates)
+                categories.insert(category_name, CategoryData {
+                    title,
+                    subtitle,
+                    images,
+                    links,
+                });
             }
-        } else {
-            generate_page(&template.title, &template.content, &templates)
-        };
-        
-        Ok(Html(html_content))
-    } else {
-        // Return 404 response
-        let not_found_html = generate_page("404 - Page Not Found", 
-            "<div style='text-align: center; padding: 50px;'>
-                <h1>404 - Page Not Found</h1>
-                <p>The page you're looking for doesn't exist.</p>
-                <a href='/'>Return to Home</a>
-             </div>", &templates);
-        
-        Err(axum::response::Response::builder()
-            .status(404)
-            .header("content-type", "text/html")
-            .body(not_found_html.into())
-            .unwrap())
+        }
     }
+
+    categories
 }
 
-// Home page handler (special case for root)
+fn generate_categories_json(categories: &HashMap<String, CategoryData>) -> String {
+    let mut json_parts = Vec::new();
+
+    let mut sorted_keys: Vec<_> = categories.keys().collect();
+    sorted_keys.sort();
+
+    for key in sorted_keys {
+        let data = &categories[key];
+        let images_json: Vec<String> = data.images.iter().map(|img| format!("\"{}\"", img)).collect();
+        let escaped_subtitle = data.subtitle
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\n", " ")
+            .replace("\r", "");
+
+        let links_json: Vec<String> = data.links.iter()
+            .map(|(k, v)| format!("\"{}\": \"{}\"", k, v.replace("\"", "\\\"")))
+            .collect();
+
+        json_parts.push(format!(
+            "\"{}\": {{\"title\": \"{}\", \"subtitle\": \"{}\", \"images\": [{}], \"links\": {{{}}}}}",
+            key,
+            data.title,
+            escaped_subtitle,
+            images_json.join(", "),
+            links_json.join(", ")
+        ));
+    }
+
+    format!("{{{}}}", json_parts.join(", "))
+}
+
+fn generate_modeling_page(content: &str, categories: &HashMap<String, CategoryData>) -> String {
+    let categories_json = generate_categories_json(categories);
+    let updated_content = content.replace("{{CATEGORIES_JSON}}", &categories_json);
+
+    let base_template = include_str!("../templates/base.html");
+    base_template
+        .replace("{{TITLE}}", "Modeling Portfolio")
+        .replace("{{CONTENT}}", &updated_content)
+}
+
+// Home page handler
 async fn home_page_handler(templates: axum::extract::State<HashMap<String, PageTemplate>>) -> Html<String> {
     if let Some(template) = templates.get("/") {
-        Html(generate_page(&template.title, &template.content, &templates))
+        Html(generate_page(&template.title, &template.content))
     } else {
-        Html(generate_page("Error", "<h1>Home page template not found</h1>", &templates))
+        Html(generate_page("Error", "<h1>Home page template not found</h1>"))
     }
 }
 
-// Contact page handler (no path parameter)
+// Contact page handler
 async fn contact_page_handler(templates: axum::extract::State<HashMap<String, PageTemplate>>) -> Result<Html<String>, axum::response::Response> {
     if let Some(template) = templates.get("/contact/") {
-        let html_content = generate_page(&template.title, &template.content, &templates);
+        let html_content = generate_page(&template.title, &template.content);
         Ok(Html(html_content))
     } else {
-        // Return 404 response
-        let not_found_html = generate_page("404 - Page Not Found", 
+        let not_found_html = generate_page("404 - Page Not Found",
             "<div style='text-align: center; padding: 50px;'>
                 <h1>404 - Page Not Found</h1>
                 <p>The contact page template was not found.</p>
                 <a href='/'>Return to Home</a>
-             </div>", &templates);
-        
+             </div>");
+
         Err(axum::response::Response::builder()
             .status(404)
             .header("content-type", "text/html")
@@ -347,22 +253,20 @@ async fn contact_page_handler(templates: axum::extract::State<HashMap<String, Pa
     }
 }
 
-// General page handler for non-modeling pages
-async fn general_page_handler(AxumPath(page_name): AxumPath<String>, templates: axum::extract::State<HashMap<String, PageTemplate>>) -> Result<Html<String>, axum::response::Response> {
-    let normalized_path = format!("/{}/", page_name);
-    
-    if let Some(template) = templates.get(&normalized_path) {
-        let html_content = generate_page(&template.title, &template.content, &templates);
+// Unified modeling page handler
+async fn unified_modeling_handler(templates: axum::extract::State<HashMap<String, PageTemplate>>) -> Result<Html<String>, axum::response::Response> {
+    if let Some(template) = templates.get("/modeling/") {
+        let categories = discover_modeling_categories();
+        let html_content = generate_modeling_page(&template.content, &categories);
         Ok(Html(html_content))
     } else {
-        // Return 404 response
-        let not_found_html = generate_page("404 - Page Not Found", 
+        let not_found_html = generate_page("404 - Page Not Found",
             "<div style='text-align: center; padding: 50px;'>
                 <h1>404 - Page Not Found</h1>
-                <p>The page you're looking for doesn't exist.</p>
+                <p>The modeling page template was not found.</p>
                 <a href='/'>Return to Home</a>
-             </div>", &templates);
-        
+             </div>");
+
         Err(axum::response::Response::builder()
             .status(404)
             .header("content-type", "text/html")
@@ -375,24 +279,23 @@ async fn general_page_handler(AxumPath(page_name): AxumPath<String>, templates: 
 async fn contact_form_handler(Form(form): Form<ContactForm>) -> Html<String> {
     use std::fs::OpenOptions;
     use std::io::Write;
-    
+
     let timestamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_secs();
-    
+
     let email = form.email.as_deref().unwrap_or("Anonymous");
     let message_entry = format!(
         "\n=== Message received at {} ===\nFrom: {} <{}>\nSubject: {}\nMessage:\n{}\n\n",
         timestamp, form.name, email, form.subject, form.message
     );
-    
-    // Save to messages.txt file
+
     let messages_file = "messages.txt";
     match OpenOptions::new()
         .create(true)
         .append(true)
-        .open(messages_file) 
+        .open(messages_file)
     {
         Ok(mut file) => {
             if let Err(e) = file.write_all(message_entry.as_bytes()) {
@@ -405,13 +308,13 @@ async fn contact_form_handler(Form(form): Form<ContactForm>) -> Html<String> {
             println!("Error opening messages file: {}", e);
         }
     }
-    
+
     Html(format!(
         r#"
         <div style="text-align: center; padding: 50px; background: linear-gradient(45deg, #4CAF50, #45a049); color: white; border-radius: 15px; margin: 20px;">
-            <h1>✨ Message Sent Successfully!</h1>
+            <h1>Message Sent Successfully!</h1>
             <p>Thank you {}, I'll get back to you soon!</p>
-            <a href="/contact/" style="color: white; text-decoration: underline;">← Send another message</a>
+            <a href="/contact/" style="color: white; text-decoration: underline;">Send another message</a>
         </div>
         "#, form.name
     ))
@@ -420,7 +323,6 @@ async fn contact_form_handler(Form(form): Form<ContactForm>) -> Html<String> {
 
 #[tokio::main]
 async fn main() {
-    // Discover all templates at startup
     let templates = match discover_templates() {
         Ok(templates) => templates,
         Err(e) => {
@@ -428,46 +330,39 @@ async fn main() {
             std::process::exit(1);
         }
     };
-    
-    // Print discovered routes
+
     println!("Discovered templates:");
     let mut sorted_paths: Vec<_> = templates.keys().collect();
     sorted_paths.sort();
     for path in &sorted_paths {
         let template = &templates[*path];
-        let page_type = if template.is_modeling { "modeling" } else { "standard" };
-        println!("  - {} ({}) - {}", path, page_type, template.title);
+        println!("  - {} - {}", path, template.title);
     }
-    
+
+    // Discover modeling categories
+    let categories = discover_modeling_categories();
+    println!("\nModeling categories:");
+    for (name, data) in &categories {
+        println!("  - {} ({} images)", name, data.images.len());
+    }
+
     let app = Router::new()
-        // Home page (special route)
         .route("/", get(home_page_handler))
-        
-        // Contact page routes (both GET and POST)
         .route("/contact/", get(contact_page_handler).post(contact_form_handler))
-        
-        // Dynamic routes for modeling pages
-        .route("/modeling/:category/", get(dynamic_modeling_handler))
-        
-        // General page handler for other pages (about, etc.)
-        .route("/:page/", get(general_page_handler))
-        
-        // Serve static files (images) from docs directory and templates
+        .route("/modeling/", get(unified_modeling_handler))
         .nest_service("/docs", ServeDir::new("docs"))
         .nest_service("/templates", ServeDir::new("templates"))
-        
-        // Share templates state with handlers
         .with_state(templates.clone());
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
         .await
         .unwrap();
-    
+
     println!("\nServer running on http://127.0.0.1:3000");
     println!("Available pages:");
-    for path in sorted_paths {
-        println!("  - http://127.0.0.1:3000{}", if path == "/" { "" } else { &path[..path.len()-1] });
-    }
-    
+    println!("  - http://127.0.0.1:3000");
+    println!("  - http://127.0.0.1:3000/contact");
+    println!("  - http://127.0.0.1:3000/modeling");
+
     axum::serve(listener, app).await.unwrap();
 }
