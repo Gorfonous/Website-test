@@ -122,6 +122,52 @@ struct CategoryData {
     background: Option<String>,
 }
 
+fn read_youtube_links() -> Vec<String> {
+    let links_file = Path::new("templates").join("music").join("youtubeLinks.txt");
+    let mut video_ids = Vec::new();
+
+    if links_file.exists() {
+        if let Ok(content) = fs::read_to_string(&links_file) {
+            for line in content.lines() {
+                let line = line.trim();
+                if line.is_empty() {
+                    continue;
+                }
+                if let Some(id) = extract_youtube_id(line) {
+                    video_ids.push(id);
+                }
+            }
+        }
+    }
+
+    video_ids
+}
+
+fn extract_youtube_id(url: &str) -> Option<String> {
+    if url.contains("youtu.be/") {
+        url.split("youtu.be/").nth(1).map(|s| s.split('?').next().unwrap_or(s).to_string())
+    } else if url.contains("youtube.com/watch") {
+        url.split("v=").nth(1).map(|s| s.split('&').next().unwrap_or(s).to_string())
+    } else {
+        None
+    }
+}
+
+fn generate_youtube_embeds(video_ids: &[String]) -> String {
+    video_ids
+        .iter()
+        .map(|id| {
+            format!(
+                r#"<div class="youtube-video-wrapper">
+                    <iframe src="https://www.youtube.com/embed/{}" frameborder="0" allowfullscreen></iframe>
+                </div>"#,
+                id
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn read_links_file(images_dir: &Path) -> HashMap<String, String> {
     let mut links = HashMap::new();
     let links_file = images_dir.join("Links.txt");
@@ -396,6 +442,11 @@ fn main() {
     if music_path.exists() {
         match fs::read_to_string(&music_path) {
             Ok(content) => {
+                // Generate YouTube embeds
+                let video_ids = read_youtube_links();
+                let embeds_html = generate_youtube_embeds(&video_ids);
+                let content = content.replace("{{YOUTUBE_EMBEDS}}", &embeds_html);
+
                 // Update background image path for GitHub Pages
                 let updated_content = content.replace(
                     "url('/templates/music/background/bkgrnd.png')",

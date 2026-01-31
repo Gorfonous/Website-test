@@ -1344,22 +1344,95 @@
     color: #888;
 }
 
-.music-videos-notice {
+.musical-resume-section {
+    margin: 2rem 0;
+}
+
+.musical-resume-section h2 {
     text-align: center;
-    padding: 2rem;
-    background: linear-gradient(135deg, #ff6b9d, #6b73ff);
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    color: #333;
+}
+
+.pdf-embed-wrapper {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.pdf-embed-wrapper iframe {
+    width: 100%;
+    height: 600px;
+    border: none;
+}
+
+.videos-section {
+    margin-top: 2rem;
+}
+
+.videos-section h2 {
+    text-align: center;
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    color: #333;
+}
+
+.youtube-videos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.youtube-video-wrapper {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.youtube-video-wrapper iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+}
+
+/* Modeling page intro */
+.modeling-intro {
+    max-width: 800px;
+    margin: 0 auto 2rem auto;
+    padding: 1.5rem 2rem;
+    background: rgba(255, 255, 255, 0.9);
     border-radius: 15px;
-    color: white;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    text-align: center;
 }
 
-.music-videos-notice h3 {
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.music-videos-notice p {
+.modeling-intro p {
     font-size: 1.1rem;
-    opacity: 0.9;
+    line-height: 1.8;
+    color: #444;
+    margin: 0;
+}
+
+.modeling-resume-section {
+    margin: 2rem auto;
+    max-width: 800px;
+}
+
+.modeling-resume-section h2 {
+    text-align: center;
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    color: #333;
 }
 
 /* Music page mobile responsiveness */
