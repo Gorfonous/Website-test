@@ -863,3 +863,581 @@
         line-height: 1.4;
     }
 }
+
+/* Bio Page Styles */
+.bio-section {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.bio-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding: 3rem 2rem;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+}
+
+.bio-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #ff6b9d, #6b73ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1rem;
+}
+
+.bio-tagline {
+    font-size: 1.2rem;
+    color: #666;
+    font-style: italic;
+}
+
+.bio-content {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 3rem;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+}
+
+.bio-intro {
+    font-size: 1.3rem;
+    line-height: 1.8;
+    color: #444;
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid rgba(107, 115, 255, 0.2);
+}
+
+.bio-timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.bio-timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #ff6b9d, #6b73ff);
+    border-radius: 2px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 3rem;
+    padding-left: 30px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -38px;
+    top: 5px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 4px solid white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.timeline-marker.early-years { background: #ff6b9d; }
+.timeline-marker.theater { background: #9c27b0; }
+.timeline-marker.modeling { background: #6b73ff; }
+.timeline-marker.film { background: #ff9800; }
+.timeline-marker.current { background: #4caf50; }
+
+.timeline-content h3 {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.timeline-date {
+    display: inline-block;
+    background: linear-gradient(135deg, #ff6b9d, #6b73ff);
+    color: white;
+    padding: 0.3rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.timeline-content p {
+    color: #555;
+    line-height: 1.7;
+    margin-bottom: 1rem;
+}
+
+.timeline-content em {
+    color: #6b73ff;
+    font-style: italic;
+}
+
+.bio-skills {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 2px solid rgba(107, 115, 255, 0.2);
+}
+
+.bio-skills h3 {
+    text-align: center;
+    font-size: 2rem;
+    color: #333;
+    margin-bottom: 2rem;
+}
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+}
+
+.skill-category {
+    background: linear-gradient(135deg, rgba(107, 115, 255, 0.1), rgba(255, 107, 157, 0.1));
+    padding: 1.5rem;
+    border-radius: 15px;
+    border: 1px solid rgba(107, 115, 255, 0.2);
+}
+
+.skill-category h4 {
+    font-size: 1.2rem;
+    color: #6b73ff;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid rgba(107, 115, 255, 0.3);
+}
+
+.skill-category ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.skill-category li {
+    padding: 0.5rem 0;
+    color: #555;
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.skill-category li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    background: linear-gradient(135deg, #ff6b9d, #6b73ff);
+    border-radius: 50%;
+}
+
+/* Bio page mobile responsiveness */
+@media (max-width: 768px) {
+    .bio-section {
+        padding: 1rem;
+    }
+
+    .bio-header {
+        padding: 2rem 1rem;
+    }
+
+    .bio-title {
+        font-size: 2.5rem;
+    }
+
+    .bio-tagline {
+        font-size: 1rem;
+    }
+
+    .bio-content {
+        padding: 1.5rem;
+    }
+
+    .bio-intro {
+        font-size: 1.1rem;
+    }
+
+    .bio-timeline {
+        padding-left: 20px;
+    }
+
+    .timeline-item {
+        padding-left: 20px;
+    }
+
+    .timeline-marker {
+        left: -28px;
+        width: 16px;
+        height: 16px;
+    }
+
+    .timeline-content h3 {
+        font-size: 1.3rem;
+    }
+
+    .skills-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+}
+
+/* Music Page Styles */
+.music-section-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.music-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding: 3rem 2rem;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+}
+
+.music-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #9c27b0, #6b73ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1rem;
+}
+
+.music-tagline {
+    font-size: 1.2rem;
+    color: #666;
+    font-style: italic;
+}
+
+.music-content {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 3rem;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+}
+
+.music-intro {
+    font-size: 1.3rem;
+    line-height: 1.8;
+    color: #444;
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid rgba(107, 115, 255, 0.2);
+}
+
+.music-instruments {
+    margin-bottom: 3rem;
+}
+
+.music-instruments h2,
+.music-genres h2,
+.track-listing h2 {
+    text-align: center;
+    font-size: 2rem;
+    color: #333;
+    margin-bottom: 1.5rem;
+}
+
+.instruments-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5rem;
+}
+
+.instrument-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    background: linear-gradient(135deg, rgba(156, 39, 176, 0.1), rgba(107, 115, 255, 0.1));
+    border-radius: 15px;
+    border: 2px solid rgba(107, 115, 255, 0.2);
+    transition: all 0.3s ease;
+    min-width: 120px;
+}
+
+.instrument-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(107, 115, 255, 0.2);
+    border-color: rgba(107, 115, 255, 0.4);
+}
+
+.instrument-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.instrument-name {
+    font-weight: 600;
+    color: #555;
+}
+
+.music-genres {
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid rgba(107, 115, 255, 0.2);
+}
+
+.genres-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.genre-bubble {
+    padding: 0.8rem 1.5rem;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    cursor: default;
+}
+
+.genre-bubble:hover {
+    transform: scale(1.1);
+}
+
+.genre-bubble.pop { background: #e3f2fd; color: #1976d2; }
+.genre-bubble.country { background: #fff3e0; color: #f57c00; }
+.genre-bubble.rock { background: #fce4ec; color: #c2185b; }
+.genre-bubble.folk { background: #e8f5e9; color: #388e3c; }
+.genre-bubble.polka { background: #f3e5f5; color: #7b1fa2; }
+.genre-bubble.waltz { background: #e0f7fa; color: #00838f; }
+.genre-bubble.opera { background: #fff8e1; color: #ff8f00; }
+.genre-bubble.gospel { background: #fbe9e7; color: #d84315; }
+.genre-bubble.yodeling { background: #e8eaf6; color: #3f51b5; }
+.genre-bubble.blues { background: #e1f5fe; color: #0277bd; }
+.genre-bubble.theater { background: #ffebee; color: #c62828; }
+.genre-bubble.more { background: linear-gradient(135deg, #ff6b9d, #6b73ff); color: white; }
+
+.album-feature {
+    margin-bottom: 3rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, rgba(156, 39, 176, 0.1), rgba(107, 115, 255, 0.1));
+    border-radius: 20px;
+    border: 2px solid rgba(107, 115, 255, 0.2);
+}
+
+.album-feature-content {
+    display: flex;
+    gap: 3rem;
+    align-items: center;
+}
+
+.album-feature-image {
+    flex-shrink: 0;
+}
+
+.featured-album-cover {
+    width: 300px;
+    height: auto;
+    border-radius: 15px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease;
+}
+
+.featured-album-cover:hover {
+    transform: scale(1.05) rotate(2deg);
+}
+
+.album-feature-info {
+    flex: 1;
+}
+
+.new-release-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #ff6b9d, #6b73ff);
+    color: white;
+    padding: 0.5rem 1.2rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.album-feature-info h2 {
+    font-size: 2.2rem;
+    color: #333;
+    margin-bottom: 1rem;
+    text-align: left;
+}
+
+.album-description {
+    font-size: 1.1rem;
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.album-feature .streaming-links {
+    justify-content: flex-start;
+    margin: 0;
+}
+
+.track-listing {
+    margin-bottom: 2rem;
+}
+
+.tracks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.track-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 12px;
+    border: 1px solid rgba(107, 115, 255, 0.15);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+}
+
+.track-item:hover {
+    background: rgba(107, 115, 255, 0.1);
+    transform: translateX(5px);
+    box-shadow: 0 5px 20px rgba(107, 115, 255, 0.15);
+}
+
+.track-number {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #6b73ff;
+    min-width: 40px;
+}
+
+.track-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.track-name {
+    font-weight: 600;
+    color: #333;
+    font-size: 1.05rem;
+}
+
+.track-genre {
+    font-size: 0.85rem;
+    color: #888;
+}
+
+.music-videos-notice {
+    text-align: center;
+    padding: 2rem;
+    background: linear-gradient(135deg, #ff6b9d, #6b73ff);
+    border-radius: 15px;
+    color: white;
+}
+
+.music-videos-notice h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.music-videos-notice p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+/* Music page mobile responsiveness */
+@media (max-width: 768px) {
+    .music-section-page {
+        padding: 1rem;
+    }
+
+    .music-header {
+        padding: 2rem 1rem;
+    }
+
+    .music-title {
+        font-size: 2.5rem;
+    }
+
+    .music-content {
+        padding: 1.5rem;
+    }
+
+    .music-intro {
+        font-size: 1.1rem;
+    }
+
+    .instruments-grid {
+        gap: 1rem;
+    }
+
+    .instrument-item {
+        padding: 1rem 1.5rem;
+        min-width: 100px;
+    }
+
+    .instrument-icon {
+        font-size: 2rem;
+    }
+
+    .genres-cloud {
+        gap: 0.8rem;
+    }
+
+    .genre-bubble {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
+    }
+
+    .album-feature {
+        padding: 1.5rem;
+    }
+
+    .album-feature-content {
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .featured-album-cover {
+        width: 250px;
+    }
+
+    .album-feature-info h2 {
+        text-align: center;
+        font-size: 1.8rem;
+    }
+
+    .album-feature .streaming-links {
+        justify-content: center;
+    }
+
+    .tracks-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .track-item {
+        padding: 0.8rem 1rem;
+    }
+
+    .track-number {
+        font-size: 1.2rem;
+        min-width: 30px;
+    }
+}

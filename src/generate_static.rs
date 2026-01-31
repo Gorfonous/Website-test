@@ -24,6 +24,14 @@ fn generate_page(title: &str, content: &str, version: &str) -> String {
         r#"<a href="/Website-test/index.html" class="nav-item">Home</a>"#
     );
     final_html = final_html.replace(
+        r#"<a href="/bio/" class="nav-item">Bio</a>"#,
+        r#"<a href="/Website-test/bio/index.html" class="nav-item">Bio</a>"#
+    );
+    final_html = final_html.replace(
+        r#"<a href="/music/" class="nav-item">Music</a>"#,
+        r#"<a href="/Website-test/music/index.html" class="nav-item">Music</a>"#
+    );
+    final_html = final_html.replace(
         r#"<a href="/contact/" class="nav-item">Contact</a>"#,
         r#"<a href="/Website-test/contact/index.html" class="nav-item">Contact</a>"#
     );
@@ -36,6 +44,12 @@ fn generate_page(title: &str, content: &str, version: &str) -> String {
     final_html = final_html.replace(
         r#"src="/templates/global-images/"#,
         r#"src="/Website-test/global-images/"#
+    );
+
+    // Update background image paths for GitHub Pages deployment
+    final_html = final_html.replace(
+        r#"url('/templates/global-images/"#,
+        r#"url('/Website-test/global-images/"#
     );
 
     // Update CSS path for GitHub Pages deployment with cache busting
@@ -105,6 +119,7 @@ struct CategoryData {
     subtitle: String,
     images: Vec<String>,
     links: HashMap<String, String>,
+    background: Option<String>,
 }
 
 fn read_links_file(images_dir: &Path) -> HashMap<String, String> {
@@ -169,11 +184,23 @@ fn discover_modeling_categories(docs_dir: &Path) -> Vec<(String, CategoryData)> 
                 let images = get_image_list_for_web(&images_dir, &category_name);
                 let links = read_links_file(&images_dir);
 
+                // Check for and copy background image
+                let background_dir = entry.path().join("Background");
+                let background = if background_dir.join("bkgrnd.png").exists() {
+                    let docs_bg_dir = docs_dir.join("modeling").join(&category_name).join("Background");
+                    create_dir_if_not_exists(&docs_bg_dir);
+                    copy_images(&background_dir, &docs_bg_dir);
+                    Some(format!("./{}/Background/bkgrnd.png", category_name))
+                } else {
+                    None
+                };
+
                 categories.push((category_name, CategoryData {
                     title,
                     subtitle,
                     images,
                     links,
+                    background,
                 }));
             }
         }
@@ -198,13 +225,19 @@ fn generate_categories_json(categories: &[(String, CategoryData)]) -> String {
             .map(|(k, v)| format!("\"{}\": \"{}\"", k, v.replace("\"", "\\\"")))
             .collect();
 
+        let background_json = match &data.background {
+            Some(bg) => format!(", \"background\": \"{}\"", bg),
+            None => String::new(),
+        };
+
         json_parts.push(format!(
-            "\"{}\": {{\"title\": \"{}\", \"subtitle\": \"{}\", \"images\": [{}], \"links\": {{{}}}}}",
+            "\"{}\": {{\"title\": \"{}\", \"subtitle\": \"{}\", \"images\": [{}], \"links\": {{{}}}{}}}",
             key,
             data.title,
             escaped_subtitle,
             images_json.join(", "),
-            links_json.join(", ")
+            links_json.join(", "),
+            background_json
         ));
     }
 
@@ -224,6 +257,14 @@ fn generate_modeling_page(content: &str, categories: &[(String, CategoryData)], 
     final_html = final_html.replace(
         r#"<a href="/" class="nav-item">Home</a>"#,
         r#"<a href="/Website-test/index.html" class="nav-item">Home</a>"#
+    );
+    final_html = final_html.replace(
+        r#"<a href="/bio/" class="nav-item">Bio</a>"#,
+        r#"<a href="/Website-test/bio/index.html" class="nav-item">Bio</a>"#
+    );
+    final_html = final_html.replace(
+        r#"<a href="/music/" class="nav-item">Music</a>"#,
+        r#"<a href="/Website-test/music/index.html" class="nav-item">Music</a>"#
     );
     final_html = final_html.replace(
         r#"<a href="/contact/" class="nav-item">Contact</a>"#,
@@ -306,6 +347,70 @@ fn main() {
     let modeling_path = docs_dir.join("modeling").join("index.html");
     fs::write(&modeling_path, modeling_html).expect("Failed to write modeling/index.html");
     println!("Generated modeling/index.html");
+
+    // Generate bio page
+    let bio_dir = docs_dir.join("bio");
+    create_dir_if_not_exists(&bio_dir);
+
+    // Copy bio background image
+    let bio_bg_src = Path::new("templates").join("bio").join("background");
+    let bio_bg_dest = bio_dir.join("background");
+    if bio_bg_src.exists() {
+        create_dir_if_not_exists(&bio_bg_dest);
+        copy_images(&bio_bg_src, &bio_bg_dest);
+    }
+
+    let bio_path = Path::new("templates").join("bio").join("bio.html");
+    if bio_path.exists() {
+        match fs::read_to_string(&bio_path) {
+            Ok(content) => {
+                // Update background image path for GitHub Pages
+                let updated_content = content.replace(
+                    "url('/templates/bio/background/bkgrnd.png')",
+                    "url('./background/bkgrnd.png')"
+                );
+                let html = generate_page("Bio", &updated_content, &version);
+                let file_path = bio_dir.join("index.html");
+                fs::write(&file_path, html).expect("Failed to write bio/index.html");
+                println!("Generated bio/index.html");
+            },
+            Err(e) => {
+                println!("Failed to read bio template: {}", e);
+            }
+        }
+    }
+
+    // Generate music page
+    let music_dir = docs_dir.join("music");
+    create_dir_if_not_exists(&music_dir);
+
+    // Copy music background image
+    let music_bg_src = Path::new("templates").join("music").join("background");
+    let music_bg_dest = music_dir.join("background");
+    if music_bg_src.exists() {
+        create_dir_if_not_exists(&music_bg_dest);
+        copy_images(&music_bg_src, &music_bg_dest);
+    }
+
+    let music_path = Path::new("templates").join("music").join("music.html");
+    if music_path.exists() {
+        match fs::read_to_string(&music_path) {
+            Ok(content) => {
+                // Update background image path for GitHub Pages
+                let updated_content = content.replace(
+                    "url('/templates/music/background/bkgrnd.png')",
+                    "url('./background/bkgrnd.png')"
+                );
+                let html = generate_page("Music", &updated_content, &version);
+                let file_path = music_dir.join("index.html");
+                fs::write(&file_path, html).expect("Failed to write music/index.html");
+                println!("Generated music/index.html");
+            },
+            Err(e) => {
+                println!("Failed to read music template: {}", e);
+            }
+        }
+    }
 
     // Generate contact page
     let contact_dir = docs_dir.join("contact");

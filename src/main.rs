@@ -63,6 +63,7 @@ struct CategoryData {
     subtitle: String,
     images: Vec<String>,
     links: HashMap<String, String>,
+    background: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -103,6 +104,26 @@ fn discover_templates() -> Result<HashMap<String, PageTemplate>, Box<dyn std::er
         let content = fs::read_to_string(&modeling_path)?;
         templates.insert("/modeling/".to_string(), PageTemplate {
             title: "Modeling Portfolio".to_string(),
+            content,
+        });
+    }
+
+    // Handle bio page
+    let bio_path = templates_dir.join("bio").join("bio.html");
+    if bio_path.exists() {
+        let content = fs::read_to_string(&bio_path)?;
+        templates.insert("/bio/".to_string(), PageTemplate {
+            title: "Bio".to_string(),
+            content,
+        });
+    }
+
+    // Handle music page
+    let music_path = templates_dir.join("music").join("music.html");
+    if music_path.exists() {
+        let content = fs::read_to_string(&music_path)?;
+        templates.insert("/music/".to_string(), PageTemplate {
+            title: "Music".to_string(),
             content,
         });
     }
@@ -169,11 +190,20 @@ fn discover_modeling_categories() -> HashMap<String, CategoryData> {
                 let images = get_image_list(&images_dir, &category_name);
                 let links = read_links_file(&images_dir);
 
+                // Check for background image
+                let background_dir = entry.path().join("Background");
+                let background = if background_dir.join("bkgrnd.png").exists() {
+                    Some(format!("/templates/modeling/{}/Background/bkgrnd.png", category_name))
+                } else {
+                    None
+                };
+
                 categories.insert(category_name, CategoryData {
                     title,
                     subtitle,
                     images,
                     links,
+                    background,
                 });
             }
         }
@@ -201,13 +231,19 @@ fn generate_categories_json(categories: &HashMap<String, CategoryData>) -> Strin
             .map(|(k, v)| format!("\"{}\": \"{}\"", k, v.replace("\"", "\\\"")))
             .collect();
 
+        let background_json = match &data.background {
+            Some(bg) => format!(", \"background\": \"{}\"", bg),
+            None => String::new(),
+        };
+
         json_parts.push(format!(
-            "\"{}\": {{\"title\": \"{}\", \"subtitle\": \"{}\", \"images\": [{}], \"links\": {{{}}}}}",
+            "\"{}\": {{\"title\": \"{}\", \"subtitle\": \"{}\", \"images\": [{}], \"links\": {{{}}}{}}}",
             key,
             data.title,
             escaped_subtitle,
             images_json.join(", "),
-            links_json.join(", ")
+            links_json.join(", "),
+            background_json
         ));
     }
 
@@ -243,6 +279,48 @@ async fn contact_page_handler(templates: axum::extract::State<HashMap<String, Pa
             "<div style='text-align: center; padding: 50px;'>
                 <h1>404 - Page Not Found</h1>
                 <p>The contact page template was not found.</p>
+                <a href='/'>Return to Home</a>
+             </div>");
+
+        Err(axum::response::Response::builder()
+            .status(404)
+            .header("content-type", "text/html")
+            .body(not_found_html.into())
+            .unwrap())
+    }
+}
+
+// Bio page handler
+async fn bio_page_handler(templates: axum::extract::State<HashMap<String, PageTemplate>>) -> Result<Html<String>, axum::response::Response> {
+    if let Some(template) = templates.get("/bio/") {
+        let html_content = generate_page(&template.title, &template.content);
+        Ok(Html(html_content))
+    } else {
+        let not_found_html = generate_page("404 - Page Not Found",
+            "<div style='text-align: center; padding: 50px;'>
+                <h1>404 - Page Not Found</h1>
+                <p>The bio page template was not found.</p>
+                <a href='/'>Return to Home</a>
+             </div>");
+
+        Err(axum::response::Response::builder()
+            .status(404)
+            .header("content-type", "text/html")
+            .body(not_found_html.into())
+            .unwrap())
+    }
+}
+
+// Music page handler
+async fn music_page_handler(templates: axum::extract::State<HashMap<String, PageTemplate>>) -> Result<Html<String>, axum::response::Response> {
+    if let Some(template) = templates.get("/music/") {
+        let html_content = generate_page(&template.title, &template.content);
+        Ok(Html(html_content))
+    } else {
+        let not_found_html = generate_page("404 - Page Not Found",
+            "<div style='text-align: center; padding: 50px;'>
+                <h1>404 - Page Not Found</h1>
+                <p>The music page template was not found.</p>
                 <a href='/'>Return to Home</a>
              </div>");
 
@@ -349,6 +427,8 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(home_page_handler))
+        .route("/bio/", get(bio_page_handler))
+        .route("/music/", get(music_page_handler))
         .route("/contact/", get(contact_page_handler).post(contact_form_handler))
         .route("/modeling/", get(unified_modeling_handler))
         .nest_service("/docs", ServeDir::new("docs"))
@@ -366,6 +446,8 @@ async fn main() {
     println!("\nServer running on http://127.0.0.1:3000");
     println!("Available pages:");
     println!("  - http://127.0.0.1:3000");
+    println!("  - http://127.0.0.1:3000/bio");
+    println!("  - http://127.0.0.1:3000/music");
     println!("  - http://127.0.0.1:3000/contact");
     println!("  - http://127.0.0.1:3000/modeling");
 

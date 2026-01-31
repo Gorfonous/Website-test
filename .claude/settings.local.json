@@ -10,7 +10,8 @@
       "Bash(dir /b \"Z:\\\\EternalCataclysmStudios\\\\Website-test\\\\templates\\\\modeling\")",
       "Bash(dir:*)",
       "Bash(powershell:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(cmd /c \"dir /s /b Z:\\\\EternalCataclysmStudios\\\\Website-test\\\\templates\\\\modeling\\\\*background*\")"
     ],
     "deny": [],
     "ask": []

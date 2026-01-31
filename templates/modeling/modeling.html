@@ -1,3 +1,11 @@
+<style id="dynamicBackground">
+    .main-content {
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }
+</style>
 <section class="page-section">
     <h1 class="page-title">Modeling Portfolio</h1>
 
@@ -47,6 +55,14 @@
         if (!data) return;
 
         document.getElementById('categorySubtitle').textContent = data.subtitle;
+
+        // Update background image
+        const mainContent = document.querySelector('.main-content');
+        if (data.background) {
+            mainContent.style.backgroundImage = `url('${data.background}')`;
+        } else {
+            mainContent.style.backgroundImage = 'none';
+        }
 
         const imageGrid = document.getElementById('imageGrid');
         const noImagesMessage = document.getElementById('noImagesMessage');
