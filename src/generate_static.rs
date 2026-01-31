@@ -28,16 +28,24 @@ fn generate_page(title: &str, content: &str, version: &str) -> String {
         r#"<a href="/Website-test/bio/index.html" class="nav-item">Bio</a>"#
     );
     final_html = final_html.replace(
+        r#"<a href="/acting/" class="nav-item">Acting</a>"#,
+        r#"<a href="/Website-test/acting/index.html" class="nav-item">Acting</a>"#
+    );
+    final_html = final_html.replace(
         r#"<a href="/music/" class="nav-item">Music</a>"#,
         r#"<a href="/Website-test/music/index.html" class="nav-item">Music</a>"#
     );
     final_html = final_html.replace(
-        r#"<a href="/contact/" class="nav-item">Contact</a>"#,
-        r#"<a href="/Website-test/contact/index.html" class="nav-item">Contact</a>"#
-    );
-    final_html = final_html.replace(
         r#"<a href="/modeling/" class="nav-item">Modeling</a>"#,
         r#"<a href="/Website-test/modeling/index.html" class="nav-item">Modeling</a>"#
+    );
+    final_html = final_html.replace(
+        r#"<a href="/reviews/" class="nav-item">Reviews</a>"#,
+        r#"<a href="/Website-test/reviews/index.html" class="nav-item">Reviews</a>"#
+    );
+    final_html = final_html.replace(
+        r#"<a href="/contact/" class="nav-item">Contact</a>"#,
+        r#"<a href="/Website-test/contact/index.html" class="nav-item">Contact</a>"#
     );
 
     // Update image paths for GitHub Pages deployment
@@ -122,8 +130,8 @@ struct CategoryData {
     background: Option<String>,
 }
 
-fn read_youtube_links() -> Vec<String> {
-    let links_file = Path::new("templates").join("music").join("youtubeLinks.txt");
+fn read_youtube_links(folder: &str) -> Vec<String> {
+    let links_file = Path::new("templates").join(folder).join("youtubeLinks.txt");
     let mut video_ids = Vec::new();
 
     if links_file.exists() {
@@ -299,7 +307,7 @@ fn generate_modeling_page(content: &str, categories: &[(String, CategoryData)], 
         .replace("{{TITLE}}", "Modeling Portfolio")
         .replace("{{CONTENT}}", &updated_content);
 
-    // Update navigation links for GitHub Pages (static generation)
+    // Update navigation links for GitHub Pages (modeling page)
     final_html = final_html.replace(
         r#"<a href="/" class="nav-item">Home</a>"#,
         r#"<a href="/Website-test/index.html" class="nav-item">Home</a>"#
@@ -309,16 +317,24 @@ fn generate_modeling_page(content: &str, categories: &[(String, CategoryData)], 
         r#"<a href="/Website-test/bio/index.html" class="nav-item">Bio</a>"#
     );
     final_html = final_html.replace(
+        r#"<a href="/acting/" class="nav-item">Acting</a>"#,
+        r#"<a href="/Website-test/acting/index.html" class="nav-item">Acting</a>"#
+    );
+    final_html = final_html.replace(
         r#"<a href="/music/" class="nav-item">Music</a>"#,
         r#"<a href="/Website-test/music/index.html" class="nav-item">Music</a>"#
     );
     final_html = final_html.replace(
-        r#"<a href="/contact/" class="nav-item">Contact</a>"#,
-        r#"<a href="/Website-test/contact/index.html" class="nav-item">Contact</a>"#
-    );
-    final_html = final_html.replace(
         r#"<a href="/modeling/" class="nav-item">Modeling</a>"#,
         r#"<a href="/Website-test/modeling/index.html" class="nav-item">Modeling</a>"#
+    );
+    final_html = final_html.replace(
+        r#"<a href="/reviews/" class="nav-item">Reviews</a>"#,
+        r#"<a href="/Website-test/reviews/index.html" class="nav-item">Reviews</a>"#
+    );
+    final_html = final_html.replace(
+        r#"<a href="/contact/" class="nav-item">Contact</a>"#,
+        r#"<a href="/Website-test/contact/index.html" class="nav-item">Contact</a>"#
     );
 
     // Update CSS path for GitHub Pages deployment with cache busting
@@ -443,7 +459,7 @@ fn main() {
         match fs::read_to_string(&music_path) {
             Ok(content) => {
                 // Generate YouTube embeds
-                let video_ids = read_youtube_links();
+                let video_ids = read_youtube_links("music");
                 let embeds_html = generate_youtube_embeds(&video_ids);
                 let content = content.replace("{{YOUTUBE_EMBEDS}}", &embeds_html);
 
@@ -478,6 +494,62 @@ fn main() {
             },
             Err(e) => {
                 println!("Failed to read contact template: {}", e);
+            }
+        }
+    }
+
+    // Generate acting page
+    let acting_dir = docs_dir.join("acting");
+    create_dir_if_not_exists(&acting_dir);
+
+    // Copy acting background image
+    let acting_bg_src = Path::new("templates").join("acting").join("Background");
+    let acting_bg_dest = acting_dir.join("Background");
+    if acting_bg_src.exists() {
+        create_dir_if_not_exists(&acting_bg_dest);
+        copy_images(&acting_bg_src, &acting_bg_dest);
+    }
+
+    let acting_path = Path::new("templates").join("acting").join("acting.html");
+    if acting_path.exists() {
+        match fs::read_to_string(&acting_path) {
+            Ok(content) => {
+                // Generate YouTube embeds
+                let video_ids = read_youtube_links("acting");
+                let embeds_html = generate_youtube_embeds(&video_ids);
+                let content = content.replace("{{ACTING_YOUTUBE_EMBEDS}}", &embeds_html);
+
+                // Update background image path for GitHub Pages
+                let updated_content = content.replace(
+                    "url('/templates/acting/Background/bckgrnd.png')",
+                    "url('./Background/bckgrnd.png')"
+                );
+                let html = generate_page("Acting", &updated_content, &version);
+                let file_path = acting_dir.join("index.html");
+                fs::write(&file_path, html).expect("Failed to write acting/index.html");
+                println!("Generated acting/index.html");
+            },
+            Err(e) => {
+                println!("Failed to read acting template: {}", e);
+            }
+        }
+    }
+
+    // Generate reviews page
+    let reviews_dir = docs_dir.join("reviews");
+    create_dir_if_not_exists(&reviews_dir);
+
+    let reviews_path = Path::new("templates").join("reviews").join("reviews.html");
+    if reviews_path.exists() {
+        match fs::read_to_string(&reviews_path) {
+            Ok(content) => {
+                let html = generate_page("Reviews", &content, &version);
+                let file_path = reviews_dir.join("index.html");
+                fs::write(&file_path, html).expect("Failed to write reviews/index.html");
+                println!("Generated reviews/index.html");
+            },
+            Err(e) => {
+                println!("Failed to read reviews template: {}", e);
             }
         }
     }

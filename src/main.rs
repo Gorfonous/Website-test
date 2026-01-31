@@ -128,11 +128,31 @@ fn discover_templates() -> Result<HashMap<String, PageTemplate>, Box<dyn std::er
         });
     }
 
+    // Handle acting page
+    let acting_path = templates_dir.join("acting").join("acting.html");
+    if acting_path.exists() {
+        let content = fs::read_to_string(&acting_path)?;
+        templates.insert("/acting/".to_string(), PageTemplate {
+            title: "Acting".to_string(),
+            content,
+        });
+    }
+
+    // Handle reviews page
+    let reviews_path = templates_dir.join("reviews").join("reviews.html");
+    if reviews_path.exists() {
+        let content = fs::read_to_string(&reviews_path)?;
+        templates.insert("/reviews/".to_string(), PageTemplate {
+            title: "Reviews".to_string(),
+            content,
+        });
+    }
+
     Ok(templates)
 }
 
-fn read_youtube_links() -> Vec<String> {
-    let links_file = Path::new("templates").join("music").join("youtubeLinks.txt");
+fn read_youtube_links(folder: &str) -> Vec<String> {
+    let links_file = Path::new("templates").join(folder).join("youtubeLinks.txt");
     let mut video_ids = Vec::new();
 
     if links_file.exists() {
@@ -361,7 +381,7 @@ async fn bio_page_handler(templates: axum::extract::State<HashMap<String, PageTe
 // Music page handler
 async fn music_page_handler(templates: axum::extract::State<HashMap<String, PageTemplate>>) -> Result<Html<String>, axum::response::Response> {
     if let Some(template) = templates.get("/music/") {
-        let video_ids = read_youtube_links();
+        let video_ids = read_youtube_links("music");
         let embeds_html = generate_youtube_embeds(&video_ids);
         let content = template.content.replace("{{YOUTUBE_EMBEDS}}", &embeds_html);
         let html_content = generate_page(&template.title, &content);
@@ -371,6 +391,51 @@ async fn music_page_handler(templates: axum::extract::State<HashMap<String, Page
             "<div style='text-align: center; padding: 50px;'>
                 <h1>404 - Page Not Found</h1>
                 <p>The music page template was not found.</p>
+                <a href='/'>Return to Home</a>
+             </div>");
+
+        Err(axum::response::Response::builder()
+            .status(404)
+            .header("content-type", "text/html")
+            .body(not_found_html.into())
+            .unwrap())
+    }
+}
+
+// Acting page handler
+async fn acting_page_handler(templates: axum::extract::State<HashMap<String, PageTemplate>>) -> Result<Html<String>, axum::response::Response> {
+    if let Some(template) = templates.get("/acting/") {
+        let video_ids = read_youtube_links("acting");
+        let embeds_html = generate_youtube_embeds(&video_ids);
+        let content = template.content.replace("{{ACTING_YOUTUBE_EMBEDS}}", &embeds_html);
+        let html_content = generate_page(&template.title, &content);
+        Ok(Html(html_content))
+    } else {
+        let not_found_html = generate_page("404 - Page Not Found",
+            "<div style='text-align: center; padding: 50px;'>
+                <h1>404 - Page Not Found</h1>
+                <p>The acting page template was not found.</p>
+                <a href='/'>Return to Home</a>
+             </div>");
+
+        Err(axum::response::Response::builder()
+            .status(404)
+            .header("content-type", "text/html")
+            .body(not_found_html.into())
+            .unwrap())
+    }
+}
+
+// Reviews page handler
+async fn reviews_page_handler(templates: axum::extract::State<HashMap<String, PageTemplate>>) -> Result<Html<String>, axum::response::Response> {
+    if let Some(template) = templates.get("/reviews/") {
+        let html_content = generate_page(&template.title, &template.content);
+        Ok(Html(html_content))
+    } else {
+        let not_found_html = generate_page("404 - Page Not Found",
+            "<div style='text-align: center; padding: 50px;'>
+                <h1>404 - Page Not Found</h1>
+                <p>The reviews page template was not found.</p>
                 <a href='/'>Return to Home</a>
              </div>");
 
@@ -478,9 +543,11 @@ async fn main() {
     let app = Router::new()
         .route("/", get(home_page_handler))
         .route("/bio/", get(bio_page_handler))
+        .route("/acting/", get(acting_page_handler))
         .route("/music/", get(music_page_handler))
-        .route("/contact/", get(contact_page_handler).post(contact_form_handler))
         .route("/modeling/", get(unified_modeling_handler))
+        .route("/reviews/", get(reviews_page_handler))
+        .route("/contact/", get(contact_page_handler).post(contact_form_handler))
         .nest_service("/docs", ServeDir::new("docs"))
         .nest_service("/templates", ServeDir::new("templates"))
         .with_state(templates.clone())
@@ -497,9 +564,11 @@ async fn main() {
     println!("Available pages:");
     println!("  - http://127.0.0.1:3000");
     println!("  - http://127.0.0.1:3000/bio");
+    println!("  - http://127.0.0.1:3000/acting");
     println!("  - http://127.0.0.1:3000/music");
-    println!("  - http://127.0.0.1:3000/contact");
     println!("  - http://127.0.0.1:3000/modeling");
+    println!("  - http://127.0.0.1:3000/reviews");
+    println!("  - http://127.0.0.1:3000/contact");
 
     axum::serve(listener, app).await.unwrap();
 }

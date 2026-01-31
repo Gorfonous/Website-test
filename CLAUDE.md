@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Rust-based web server project for Amber Techel's Arts, Talents, & Entertainment LLC that serves a portfolio website featuring modeling, music, and bio pages. The project supports both development server mode and static site generation for GitHub Pages deployment.
+This is a Rust-based web server project for Amber Techel's Arts, Talents, & Entertainment LLC that serves a portfolio website featuring modeling, music, acting, bio, and reviews pages. The project supports both development server mode and static site generation for GitHub Pages deployment.
 
 ## Technology Stack
 
@@ -42,6 +42,10 @@ This is a Rust-based web server project for Amber Techel's Arts, Talents, & Ente
   - `music/music.html` - Music page with album and track listing
   - `music/background/bkgrnd.png` - Music page background image
   - `music/youtubeLinks.txt` - YouTube video URLs to embed (one per line)
+  - `acting/acting.html` - Acting page with resumes and videos
+  - `acting/Background/bckgrnd.png` - Acting page background image
+  - `acting/youtubeLinks.txt` - YouTube video URLs for acting page
+  - `reviews/reviews.html` - Reviews/testimonials page
   - `contact/contact.html` - Contact page with form
   - `modeling/modeling.html` - Unified modeling page with category dropdown
   - `modeling/{category}/` - Category-specific folders containing:
@@ -67,6 +71,7 @@ Each page can have a custom background image applied to the `.main-content` area
 - **Home page**: Uses `templates/global-images/homebackground.png`
 - **Bio page**: Uses `templates/bio/background/bkgrnd.png`
 - **Music page**: Uses `templates/music/background/bkgrnd.png`
+- **Acting page**: Uses `templates/acting/Background/bckgrnd.png`
 - **Modeling page**: Dynamic backgrounds per category from `templates/modeling/{category}/Background/bkgrnd.png`
 
 Background styles are added via `<style>` blocks in each template targeting `.main-content` with:
@@ -94,10 +99,27 @@ Background styles are added via `<style>` blocks in each template targeting `.ma
 - Track listing with YouTube links
 - Dynamically loaded YouTube video embeds from `youtubeLinks.txt`
 
+### Acting Page Features
+- Intro section about acting background (started at age 3, film industry since 2013)
+- Side-by-side Acting Resume and Theater Resume PDFs from Google Drive
+- Quote/philosophy section
+- IMDB Pro profile link
+- Current & Recent Projects cards (Finesse, Horse Camp 3, etc.)
+- Featured Work section with embedded "Best Interest" video
+- Dynamically loaded YouTube video embeds from `acting/youtubeLinks.txt`
+- Uses `{{ACTING_YOUTUBE_EMBEDS}}` placeholder
+
+### Reviews Page Features
+- Testimonials section with card grid layout
+- Each testimonial card includes quote text, author name, and title/company
+- Green-themed styling to differentiate from other pages
+- Responsive grid that stacks on mobile
+
 ### Embedded Content
-- **YouTube Videos**: Add URLs to `templates/music/youtubeLinks.txt` (one per line, supports `youtu.be/ID` and `youtube.com/watch?v=ID` formats)
+- **YouTube Videos**: Add URLs to `templates/music/youtubeLinks.txt` or `templates/acting/youtubeLinks.txt` (one per line, supports `youtu.be/ID` and `youtube.com/watch?v=ID` formats)
 - **Google Drive PDFs**: Use embed format `https://drive.google.com/file/d/{FILE_ID}/preview` in iframe
 - Music page uses `{{YOUTUBE_EMBEDS}}` placeholder that gets replaced with generated iframe HTML
+- Acting page uses `{{ACTING_YOUTUBE_EMBEDS}}` placeholder for its video section
 
 ### Links.txt Format
 Place in `templates/modeling/{category}/images/Links.txt`:
@@ -116,9 +138,11 @@ another-image,https://example.com/another-link
 - Routes:
   - `/` - Home page
   - `/bio/` - Bio page with career timeline
+  - `/acting/` - Acting page with resumes, projects, and videos
   - `/music/` - Music page with album info and track listing
-  - `/contact/` - Contact page (GET shows form, POST handles submission)
   - `/modeling/` - Unified modeling portfolio with category dropdown
+  - `/reviews/` - Reviews/testimonials page
+  - `/contact/` - Contact page (GET shows form, POST handles submission)
 
 ### Static Site Generator (src/generate_static.rs)
 - Compiles templates into static HTML files in `docs/` directory
@@ -148,7 +172,7 @@ another-image,https://example.com/another-link
    - For modeling categories: Add `Background/bkgrnd.png` in the category folder (auto-discovered)
 4. **Adding Modeling Images**: Place images in `templates/modeling/{category}/images/` - they'll be auto-discovered and copied to `docs/` by static generator
 5. **Adding Image Links**: Create/edit `templates/modeling/{category}/images/Links.txt` with `imagename,url` mappings
-6. **Adding YouTube Videos**: Add URLs to `templates/music/youtubeLinks.txt` (one per line) - auto-embedded on music page
+6. **Adding YouTube Videos**: Add URLs to `templates/music/youtubeLinks.txt` or `templates/acting/youtubeLinks.txt` (one per line) - auto-embedded on respective pages
 7. **Adding PDF Embeds**: Use Google Drive preview URL format in iframe: `https://drive.google.com/file/d/{FILE_ID}/preview`
 8. **Testing Changes**: Use development server for rapid iteration (no need to hard-refresh), then generate static files to test final output
 9. **Footer/Navigation Changes**: Edit `templates/base.html` - changes apply to all pages
