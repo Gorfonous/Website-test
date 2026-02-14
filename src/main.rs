@@ -148,6 +148,16 @@ fn discover_templates() -> Result<HashMap<String, PageTemplate>, Box<dyn std::er
         });
     }
 
+    // Handle behind-the-scenes page
+    let bts_path = templates_dir.join("Behind the scenes").join("behind-the-scenes.html");
+    if bts_path.exists() {
+        let content = fs::read_to_string(&bts_path)?;
+        templates.insert("/behind-the-scenes/".to_string(), PageTemplate {
+            title: "Behind the Scenes".to_string(),
+            content,
+        });
+    }
+
     Ok(templates)
 }
 
@@ -447,6 +457,63 @@ async fn reviews_page_handler(templates: axum::extract::State<HashMap<String, Pa
     }
 }
 
+// Behind-the-scenes page handler
+async fn bts_page_handler(templates: axum::extract::State<HashMap<String, PageTemplate>>) -> Result<Html<String>, axum::response::Response> {
+    if let Some(template) = templates.get("/behind-the-scenes/") {
+        let images_dir = Path::new("templates").join("Behind the scenes").join("images");
+        let mut images = Vec::new();
+
+        if images_dir.exists() {
+            if let Ok(entries) = fs::read_dir(&images_dir) {
+                for entry in entries.flatten() {
+                    if let Some(extension) = entry.path().extension() {
+                        if matches!(extension.to_str(), Some("png") | Some("jpg") | Some("jpeg")) {
+                            if let Some(filename) = entry.file_name().to_str() {
+                                let url_encoded_filename = url_encode(filename);
+                                images.push(format!("/templates/Behind the scenes/images/{}", url_encoded_filename));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        images.sort();
+
+        let images_json: Vec<String> = images.iter().map(|img| format!("\"{}\"", img)).collect();
+        let images_json_str = format!("[{}]", images_json.join(", "));
+
+        let subtitle_file = Path::new("templates").join("Behind the scenes").join("subtitle.txt");
+        let subtitle = if subtitle_file.exists() {
+            fs::read_to_string(&subtitle_file)
+                .unwrap_or_else(|_| "Behind the scenes photography".to_string())
+                .trim()
+                .to_string()
+        } else {
+            "Behind the scenes photography".to_string()
+        };
+
+        let content = template.content
+            .replace("{{BTS_IMAGES_JSON}}", &images_json_str)
+            .replace("{{BTS_SUBTITLE}}", &subtitle);
+
+        let html_content = generate_page(&template.title, &content);
+        Ok(Html(html_content))
+    } else {
+        let not_found_html = generate_page("404 - Page Not Found",
+            "<div style='text-align: center; padding: 50px;'>
+                <h1>404 - Page Not Found</h1>
+                <p>The behind-the-scenes page template was not found.</p>
+                <a href='/'>Return to Home</a>
+             </div>");
+
+        Err(axum::response::Response::builder()
+            .status(404)
+            .header("content-type", "text/html")
+            .body(not_found_html.into())
+            .unwrap())
+    }
+}
+
 // Unified modeling page handler
 async fn unified_modeling_handler(templates: axum::extract::State<HashMap<String, PageTemplate>>) -> Result<Html<String>, axum::response::Response> {
     if let Some(template) = templates.get("/modeling/") {
@@ -547,6 +614,7 @@ async fn main() {
         .route("/music/", get(music_page_handler))
         .route("/modeling/", get(unified_modeling_handler))
         .route("/reviews/", get(reviews_page_handler))
+        .route("/behind-the-scenes/", get(bts_page_handler))
         .route("/contact/", get(contact_page_handler).post(contact_form_handler))
         .nest_service("/docs", ServeDir::new("docs"))
         .nest_service("/templates", ServeDir::new("templates"))
@@ -568,6 +636,7 @@ async fn main() {
     println!("  - http://127.0.0.1:3000/music");
     println!("  - http://127.0.0.1:3000/modeling");
     println!("  - http://127.0.0.1:3000/reviews");
+    println!("  - http://127.0.0.1:3000/behind-the-scenes");
     println!("  - http://127.0.0.1:3000/contact");
 
     axum::serve(listener, app).await.unwrap();

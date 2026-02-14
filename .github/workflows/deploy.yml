@@ -38,7 +38,7 @@ jobs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     
     - name: Generate static files
-      run: cargo run --bin generate-static
+      run: cargo run --release --bin generate-static
     
     - name: Upload Pages artifact
       uses: actions/upload-pages-artifact@v3

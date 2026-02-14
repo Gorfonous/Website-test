@@ -44,6 +44,10 @@ fn generate_page(title: &str, content: &str, version: &str) -> String {
         r#"<a href="/Website-test/reviews/index.html" class="nav-item">Reviews</a>"#
     );
     final_html = final_html.replace(
+        r#"<a href="/behind-the-scenes/" class="nav-item">Behind the Scenes</a>"#,
+        r#"<a href="/Website-test/behind-the-scenes/index.html" class="nav-item">Behind the Scenes</a>"#
+    );
+    final_html = final_html.replace(
         r#"<a href="/contact/" class="nav-item">Contact</a>"#,
         r#"<a href="/Website-test/contact/index.html" class="nav-item">Contact</a>"#
     );
@@ -333,6 +337,10 @@ fn generate_modeling_page(content: &str, categories: &[(String, CategoryData)], 
         r#"<a href="/Website-test/reviews/index.html" class="nav-item">Reviews</a>"#
     );
     final_html = final_html.replace(
+        r#"<a href="/behind-the-scenes/" class="nav-item">Behind the Scenes</a>"#,
+        r#"<a href="/Website-test/behind-the-scenes/index.html" class="nav-item">Behind the Scenes</a>"#
+    );
+    final_html = final_html.replace(
         r#"<a href="/contact/" class="nav-item">Contact</a>"#,
         r#"<a href="/Website-test/contact/index.html" class="nav-item">Contact</a>"#
     );
@@ -550,6 +558,81 @@ fn main() {
             },
             Err(e) => {
                 println!("Failed to read reviews template: {}", e);
+            }
+        }
+    }
+
+    // Generate behind-the-scenes page
+    let bts_dir = docs_dir.join("behind-the-scenes");
+    create_dir_if_not_exists(&bts_dir);
+
+    // Copy BTS images
+    let bts_images_src = Path::new("templates").join("Behind the scenes").join("images");
+    let bts_images_dest = bts_dir.join("images");
+    if bts_images_src.exists() {
+        create_dir_if_not_exists(&bts_images_dest);
+        copy_images(&bts_images_src, &bts_images_dest);
+    }
+
+    // Copy BTS background image
+    let bts_bg_src = Path::new("templates").join("Behind the scenes").join("background");
+    let bts_bg_dest = bts_dir.join("background");
+    if bts_bg_src.exists() {
+        create_dir_if_not_exists(&bts_bg_dest);
+        copy_images(&bts_bg_src, &bts_bg_dest);
+    }
+
+    let bts_path = Path::new("templates").join("Behind the scenes").join("behind-the-scenes.html");
+    if bts_path.exists() {
+        match fs::read_to_string(&bts_path) {
+            Ok(content) => {
+                // Read subtitle
+                let subtitle_file = Path::new("templates").join("Behind the scenes").join("subtitle.txt");
+                let subtitle = if subtitle_file.exists() {
+                    fs::read_to_string(&subtitle_file)
+                        .unwrap_or_else(|_| "Behind the scenes photography".to_string())
+                        .trim()
+                        .to_string()
+                } else {
+                    "Behind the scenes photography".to_string()
+                };
+
+                // Get images list
+                let mut images = Vec::new();
+                if bts_images_src.exists() {
+                    if let Ok(entries) = fs::read_dir(&bts_images_src) {
+                        for entry in entries.flatten() {
+                            if let Some(extension) = entry.path().extension() {
+                                if matches!(extension.to_str(), Some("png") | Some("jpg") | Some("jpeg")) {
+                                    if let Some(filename) = entry.file_name().to_str() {
+                                        images.push(format!("./images/{}", filename));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                images.sort();
+
+                let images_json: Vec<String> = images.iter().map(|img| format!("\"{}\"", img)).collect();
+                let images_json_str = format!("[{}]", images_json.join(", "));
+
+                // Update background image path for GitHub Pages
+                let updated_content = content
+                    .replace("{{BTS_IMAGES_JSON}}", &images_json_str)
+                    .replace("{{BTS_SUBTITLE}}", &subtitle)
+                    .replace(
+                        "url('/templates/Behind the scenes/background/bkgrnd.png')",
+                        "url('./background/bkgrnd.png')"
+                    );
+
+                let html = generate_page("Behind the Scenes", &updated_content, &version);
+                let file_path = bts_dir.join("index.html");
+                fs::write(&file_path, html).expect("Failed to write behind-the-scenes/index.html");
+                println!("Generated behind-the-scenes/index.html");
+            },
+            Err(e) => {
+                println!("Failed to read behind-the-scenes template: {}", e);
             }
         }
     }

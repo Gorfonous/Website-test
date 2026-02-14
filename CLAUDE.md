@@ -48,6 +48,10 @@ This is a Rust-based web server project for Amber Techel's Arts, Talents, & Ente
   - `reviews/reviews.html` - Reviews/testimonials page
   - `contact/contact.html` - Contact page with form
   - `modeling/modeling.html` - Unified modeling page with category dropdown
+  - `Behind the scenes/behind-the-scenes.html` - Behind the scenes gallery page
+  - `Behind the scenes/images/` - Behind the scenes photos
+  - `Behind the scenes/Background/bkgrnd.png` - Behind the scenes page background image
+  - `Behind the scenes/subtitle.txt` - Custom subtitle text for behind the scenes page
   - `modeling/{category}/` - Category-specific folders containing:
     - `images/` - Portfolio images for that category
     - `images/Links.txt` - Optional file mapping image names to URLs (format: `imagename,https://...`)
@@ -73,6 +77,7 @@ Each page can have a custom background image applied to the `.main-content` area
 - **Music page**: Uses `templates/music/background/bkgrnd.png`
 - **Acting page**: Uses `templates/acting/Background/bckgrnd.png`
 - **Modeling page**: Dynamic backgrounds per category from `templates/modeling/{category}/Background/bkgrnd.png`
+- **Behind the Scenes page**: Uses `templates/Behind the scenes/Background/bkgrnd.png`
 
 Background styles are added via `<style>` blocks in each template targeting `.main-content` with:
 - `background-size: cover`
@@ -115,6 +120,13 @@ Background styles are added via `<style>` blocks in each template targeting `.ma
 - Green-themed styling to differentiate from other pages
 - Responsive grid that stacks on mobile
 
+### Behind the Scenes Page Features
+- Gallery layout displaying behind-the-scenes photos from film & shoots
+- Custom subtitle text from `subtitle.txt`
+- Responsive grid gallery with hover effects
+- Images open in new tab when clicked
+- Optional background image support
+
 ### Embedded Content
 - **YouTube Videos**: Add URLs to `templates/music/youtubeLinks.txt` or `templates/acting/youtubeLinks.txt` (one per line, supports `youtu.be/ID` and `youtube.com/watch?v=ID` formats)
 - **Google Drive PDFs**: Use embed format `https://drive.google.com/file/d/{FILE_ID}/preview` in iframe
@@ -142,6 +154,7 @@ another-image,https://example.com/another-link
   - `/music/` - Music page with album info and track listing
   - `/modeling/` - Unified modeling portfolio with category dropdown
   - `/reviews/` - Reviews/testimonials page
+  - `/behind-the-scenes/` - Behind the scenes gallery page
   - `/contact/` - Contact page (GET shows form, POST handles submission)
 
 ### Static Site Generator (src/generate_static.rs)
