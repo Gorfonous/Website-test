@@ -6,6 +6,18 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
+#[derive(Debug, Deserialize)]
+struct Testimonial {
+    quote: String,
+    author: String,
+    title: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct TestimonialsData {
+    testimonials: Vec<Testimonial>,
+}
+
 fn url_encode(input: &str) -> String {
     input
         .chars()
@@ -20,6 +32,52 @@ fn url_encode(input: &str) -> String {
             _ => format!("%{:02X}", c as u8),
         })
         .collect()
+}
+
+fn read_testimonials() -> Vec<Testimonial> {
+    let yaml_path = Path::new("templates").join("reviews").join("reviews.yaml");
+
+    if yaml_path.exists() {
+        if let Ok(content) = fs::read_to_string(&yaml_path) {
+            if let Ok(data) = serde_yaml::from_str::<TestimonialsData>(&content) {
+                return data.testimonials;
+            }
+        }
+    }
+
+    Vec::new()
+}
+
+fn html_escape(input: &str) -> String {
+    input
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
+
+fn generate_testimonials_html(testimonials: &[Testimonial]) -> String {
+    testimonials
+        .iter()
+        .map(|t| {
+            format!(
+                r#"<div class="testimonial-card">
+                <div class="testimonial-text">
+                    <p>{}</p>
+                </div>
+                <div class="testimonial-author">
+                    <span class="author-name">{}</span>
+                    <span class="author-title">{}</span>
+                </div>
+            </div>"#,
+                html_escape(&t.quote),
+                html_escape(&t.author),
+                html_escape(&t.title)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n            ")
 }
 
 fn generate_page(title: &str, content: &str) -> String {
@@ -439,7 +497,10 @@ async fn acting_page_handler(templates: axum::extract::State<HashMap<String, Pag
 // Reviews page handler
 async fn reviews_page_handler(templates: axum::extract::State<HashMap<String, PageTemplate>>) -> Result<Html<String>, axum::response::Response> {
     if let Some(template) = templates.get("/reviews/") {
-        let html_content = generate_page(&template.title, &template.content);
+        let testimonials = read_testimonials();
+        let testimonials_html = generate_testimonials_html(&testimonials);
+        let content = template.content.replace("{{TESTIMONIALS_HTML}}", &testimonials_html);
+        let html_content = generate_page(&template.title, &content);
         Ok(Html(html_content))
     } else {
         let not_found_html = generate_page("404 - Page Not Found",

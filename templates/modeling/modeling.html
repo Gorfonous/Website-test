@@ -41,6 +41,44 @@
             <p>No images available yet.</p>
         </div>
     </div>
+
+    <!-- Image Modal -->
+    <div id="imageModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content-wrapper">
+            <button class="modal-close" aria-label="Close modal">&times;</button>
+            <button class="modal-nav modal-prev" aria-label="Previous image">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+
+            <div class="modal-image-container">
+                <img id="modalImage" src="" alt="" />
+                <div class="modal-caption">
+                    <span id="modalImageTitle"></span>
+                    <span id="modalImageCounter"></span>
+                </div>
+            </div>
+
+            <button class="modal-nav modal-next" aria-label="Next image">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+
+            <div id="modalLinkButton" class="modal-link-wrapper">
+                <a id="modalExternalLink" href="#" target="_blank" rel="noopener noreferrer">
+                    Visit Product Page
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
 </section>
 
 <script>
@@ -64,6 +102,11 @@
     }
 
     function switchCategory() {
+        // Close modal if it's open
+        if (document.getElementById('imageModal').classList.contains('active')) {
+            closeModal();
+        }
+
         const select = document.getElementById('categorySelect');
         const category = select.value;
         const data = categoryData[category];
@@ -112,26 +155,155 @@
         img.alt = `${categoryTitle} Image ${index}`;
         img.loading = 'lazy';
 
-        const caption = document.createElement('div');
-        caption.className = 'image-caption';
-        caption.textContent = `${categoryTitle} ${index}`;
-
         imageItem.appendChild(img);
-        imageItem.appendChild(caption);
 
         const imageKey = getImageKey(imagePath);
         const link = links[imageKey];
 
         imageItem.addEventListener('click', function() {
-            if (link) {
-                window.open(link, '_blank');
-            } else {
-                window.open(imagePath, '_blank');
-            }
+            openModal(imagePath, `${categoryTitle} ${index}`, link, index - 1);
         });
 
         imageGrid.appendChild(imageItem);
     }
 
-    document.addEventListener('DOMContentLoaded', populateDropdown);
+    // Modal state
+    let currentImages = [];
+    let currentImageIndex = 0;
+    let currentCategoryLinks = {};
+    let currentCategoryTitle = '';
+
+    function openModal(imagePath, title, link, imageIndex) {
+        const modal = document.getElementById('imageModal');
+        const modalImage = document.getElementById('modalImage');
+        const modalTitle = document.getElementById('modalImageTitle');
+        const modalCounter = document.getElementById('modalImageCounter');
+        const modalLinkButton = document.getElementById('modalLinkButton');
+        const modalExternalLink = document.getElementById('modalExternalLink');
+
+        // Get current category data
+        const select = document.getElementById('categorySelect');
+        const category = select.value;
+        const data = categoryData[category];
+
+        // Store current category images and links
+        currentImages = data.images;
+        currentCategoryLinks = data.links || {};
+        currentCategoryTitle = data.title;
+        currentImageIndex = imageIndex;
+
+        // Set image and title
+        modalImage.src = imagePath;
+        modalImage.alt = title;
+        modalTitle.textContent = title;
+        modalCounter.textContent = `${currentImageIndex + 1} / ${currentImages.length}`;
+
+        // Show/hide external link button
+        if (link) {
+            modalExternalLink.href = link;
+            modalLinkButton.classList.add('active');
+        } else {
+            modalLinkButton.classList.remove('active');
+        }
+
+        // Update navigation buttons
+        updateNavButtons();
+
+        // Show modal
+        modal.classList.add('active');
+        document.body.classList.add('modal-open');
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('imageModal');
+        modal.classList.remove('active');
+        document.body.classList.remove('modal-open');
+    }
+
+    function navigateModal(direction) {
+        const newIndex = currentImageIndex + direction;
+
+        // Check bounds
+        if (newIndex < 0 || newIndex >= currentImages.length) {
+            return;
+        }
+
+        currentImageIndex = newIndex;
+        const imagePath = currentImages[currentImageIndex];
+        const imageKey = getImageKey(imagePath);
+        const link = currentCategoryLinks[imageKey];
+
+        const modalImage = document.getElementById('modalImage');
+        const modalTitle = document.getElementById('modalImageTitle');
+        const modalCounter = document.getElementById('modalImageCounter');
+        const modalLinkButton = document.getElementById('modalLinkButton');
+        const modalExternalLink = document.getElementById('modalExternalLink');
+
+        // Fade out
+        modalImage.style.opacity = '0';
+        modalImage.style.transform = 'scale(0.95)';
+
+        setTimeout(() => {
+            // Update image
+            modalImage.src = imagePath;
+            modalImage.alt = `${currentCategoryTitle} ${currentImageIndex + 1}`;
+            modalTitle.textContent = `${currentCategoryTitle} ${currentImageIndex + 1}`;
+            modalCounter.textContent = `${currentImageIndex + 1} / ${currentImages.length}`;
+
+            // Update external link
+            if (link) {
+                modalExternalLink.href = link;
+                modalLinkButton.classList.add('active');
+            } else {
+                modalLinkButton.classList.remove('active');
+            }
+
+            // Update navigation buttons
+            updateNavButtons();
+
+            // Fade in
+            modalImage.style.opacity = '1';
+            modalImage.style.transform = 'scale(1)';
+        }, 150);
+    }
+
+    function updateNavButtons() {
+        const prevBtn = document.querySelector('.modal-prev');
+        const nextBtn = document.querySelector('.modal-next');
+
+        prevBtn.disabled = currentImageIndex === 0;
+        nextBtn.disabled = currentImageIndex === currentImages.length - 1;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        populateDropdown();
+
+        // Modal event listeners
+        const modal = document.getElementById('imageModal');
+        const modalOverlay = document.querySelector('.modal-overlay');
+        const closeBtn = document.querySelector('.modal-close');
+        const prevBtn = document.querySelector('.modal-prev');
+        const nextBtn = document.querySelector('.modal-next');
+
+        // Close modal
+        closeBtn.addEventListener('click', closeModal);
+        modalOverlay.addEventListener('click', closeModal);
+
+        // Navigation
+        prevBtn.addEventListener('click', () => navigateModal(-1));
+        nextBtn.addEventListener('click', () => navigateModal(1));
+
+        // Keyboard controls
+        document.addEventListener('keydown', function(e) {
+            if (!modal.classList.contains('active')) return;
+
+            if (e.key === 'Escape') {
+                closeModal();
+            } else if (e.key === 'ArrowLeft') {
+                navigateModal(-1);
+            } else if (e.key === 'ArrowRight') {
+                navigateModal(1);
+            }
+        });
+    });
 </script>
