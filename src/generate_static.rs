@@ -2,6 +2,22 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 
+fn url_encode(input: &str) -> String {
+    input
+        .chars()
+        .map(|c| match c {
+            ' ' => "%20".to_string(),
+            '+' => "%2B".to_string(),
+            '#' => "%23".to_string(),
+            '&' => "%26".to_string(),
+            '=' => "%3D".to_string(),
+            '?' => "%3F".to_string(),
+            c if c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.' || c == '~' => c.to_string(),
+            _ => format!("%{:02X}", c as u8),
+        })
+        .collect()
+}
+
 fn get_git_hash() -> String {
     Command::new("git")
         .args(["rev-parse", "--short", "HEAD"])
@@ -82,7 +98,8 @@ fn get_image_list_for_web(images_dir: &Path, category: &str) -> Vec<String> {
                 if let Some(extension) = entry.path().extension() {
                     if matches!(extension.to_str(), Some("png") | Some("jpg") | Some("jpeg")) {
                         if let Some(filename) = entry.file_name().to_str() {
-                            images.push(format!("./{}/images/{}", category, filename));
+                            let url_encoded_filename = url_encode(filename);
+                            images.push(format!("./{}/images/{}", category, url_encoded_filename));
                         }
                     }
                 }
@@ -605,7 +622,8 @@ fn main() {
                             if let Some(extension) = entry.path().extension() {
                                 if matches!(extension.to_str(), Some("png") | Some("jpg") | Some("jpeg")) {
                                     if let Some(filename) = entry.file_name().to_str() {
-                                        images.push(format!("./images/{}", filename));
+                                        let url_encoded_filename = url_encode(filename);
+                                        images.push(format!("./images/{}", url_encoded_filename));
                                     }
                                 }
                             }
